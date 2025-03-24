@@ -102,9 +102,9 @@ const gradeAssignment = async (req, res) => {
       return res.status(500).json({ message: "Assignment does not have a valid courseId." });
     }
 
-    // ✅ Normalize score to be out of 10
-    const normalizedScore = (score / 100) * 10;
-    assignment.score = normalizedScore;
+    
+    // ✅ Score is directly out of 10
+    assignment.score = score;
     assignment.feedback = feedback;
     await assignment.save();
 
@@ -124,6 +124,48 @@ const gradeAssignment = async (req, res) => {
 };
 
 
+// const gradeAssignment = async (req, res) => {
+//   const { assignmentId, score, feedback } = req.body;
+
+//   try {
+//     // ✅ Fetch the assignment and populate lesson details
+//     const assignment = await SubmittedAssignment.findById(assignmentId).populate("lesson");
+
+//     if (!assignment) return res.status(404).json({ message: "Assignment not found" });
+
+//     console.log("Assignment Data Before Grading:", assignment);
+
+//     // ✅ Ensure assignment has a courseId
+//     if (!assignment.course && assignment.lesson?.course) {
+//       assignment.course = assignment.lesson.course;
+//       await assignment.save();
+//       console.log("✅ Updated Assignment with CourseId:", assignment);
+//     }
+
+//     if (!assignment.course) {
+//       console.error("❌ Error: Assignment does not have a courseId!");
+//       return res.status(500).json({ message: "Assignment does not have a valid courseId." });
+//     }
+
+//     // ✅ Directly save score (already out of 10)
+//     assignment.score = score;
+//     assignment.feedback = feedback;
+//     await assignment.save();
+
+//     console.log("✅ Assignment Graded Successfully:", assignment);
+
+//     // ✅ Update Evo Score
+//     await updateEvoScore(assignment.student, assignment.course);
+
+//     res.json({
+//       message: "Assignment graded successfully. Evo Score updated.",
+//       assignment
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 
 
