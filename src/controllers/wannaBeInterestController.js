@@ -1,16 +1,24 @@
 const WannaBeInterest = require("../models/WannaBeInterest");
 
-// Create a new "Wanna Be" or "Interest"
 const createWannaBeInterest = async (req, res) => {
-  const { type, name } = req.body;
-
   try {
-    // Check if the name already exists
-    const exists = await WannaBeInterest.findOne({ name });
-    if (exists) return res.status(400).json({ message: "This entry already exists" });
+    const { title, description } = req.body;
 
-    const newEntry = await WannaBeInterest.create({ type, name });
-    res.status(201).json({ message: `${type} added successfully`, newEntry });
+    if (!title || !req.file) {
+      return res.status(400).json({ message: "Title and image are required." });
+    }
+
+    // Check for existing title
+    const exists = await WannaBeInterest.findOne({ title });
+    if (exists) return res.status(400).json({ message: "This title already exists" });
+
+    const newEntry = await WannaBeInterest.create({
+      title,
+      description,
+      image: req.file.path, // multer stores the path
+    });
+
+    res.status(201).json({ message: "Wanna Be Interest created successfully", newEntry });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

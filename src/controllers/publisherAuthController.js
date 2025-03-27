@@ -7,23 +7,50 @@ const generateToken = (id, role) => {
   };
   
 
-// Publisher Sign Up
-const registerPublisher = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  try {
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: "Email already registered" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const publisher = await User.create({ name, email, password: hashedPassword, role: "Publisher", isApproved: false });
-
-    res.status(201).json({ message: "Registration successful. Waiting for admin approval.", publisher });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
+  const registerPublisher = async (req, res) => {
+    const {
+      name,
+      username,
+      email,
+      password,
+      dob,
+      contactNumber,
+      address,
+      workingMode,
+      education,
+      about,
+    } = req.body;
+  
+    try {
+      const exists = await User.findOne({ email });
+      if (exists) return res.status(400).json({ message: "Email already registered" });
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const publisher = await User.create({
+        name,
+        username,
+        email,
+        password: hashedPassword,
+        role: "Publisher",
+        isApproved: false,
+        dob,
+        contactNumber,
+        address,
+        workingMode,
+        education,
+        bio: about,
+        photo: req.file?.path || "", // Uploaded photo
+      });
+  
+      res.status(201).json({
+        message: "Publisher registered successfully. Awaiting admin approval.",
+        publisher,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  
 const loginPublisher = async (req, res) => {
     const { email, password } = req.body;
   

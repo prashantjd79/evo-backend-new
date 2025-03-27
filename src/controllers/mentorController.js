@@ -7,33 +7,96 @@ const { updateEvoScore } = require("../utils/evoScoreUtils");
 
 
 
-// Register Mentor
+
+// const registerMentor = async (req, res) => {
+//   const { name, email, password, expertise } = req.body;
+
+//   try {
+//     // Check if email already exists
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) return res.status(400).json({ message: "Email already in use" });
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create mentor user
+//     const mentor = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role: "Mentor",
+//       expertise,
+//       isApproved: false, // Requires Admin Approval
+//     });
+
+//     res.status(201).json({ message: "Mentor registered, pending approval", mentor });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const registerMentor = async (req, res) => {
-  const { name, email, password, expertise } = req.body;
+  const {
+    name,
+    username,
+    dob,
+    email,
+    password,
+    contactNumber,
+    bio,
+    address,
+    education,
+    expertise,
+    workingMode
+  } = req.body;
 
   try {
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email already in use" });
+    // Check email and username
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) return res.status(400).json({ message: "Email already in use" });
 
-    // Hash password
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) return res.status(400).json({ message: "Username already taken" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create mentor user
+    const photo = req.file ? `mentors/${req.file.filename}` : null;
+
     const mentor = await User.create({
       name,
+      username,
+      dob,
       email,
       password: hashedPassword,
-      role: "Mentor",
+      contactNumber,
+      photo,
+      bio,
+      address,
+      education,
       expertise,
-      isApproved: false, // Requires Admin Approval
+      workingMode,
+      role: "Mentor",
+      isApproved: false // pending admin approval
     });
 
-    res.status(201).json({ message: "Mentor registered, pending approval", mentor });
+    res.status(201).json({
+      message: "Mentor registered, pending approval",
+      mentor: {
+        _id: mentor._id,
+        name: mentor.name,
+        username: mentor.username,
+        email: mentor.email,
+        expertise: mentor.expertise,
+        photo: mentor.photo,
+        isApproved: mentor.isApproved,
+      }
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const loginMentor = async (req, res) => {
   const { email, password } = req.body;

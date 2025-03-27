@@ -34,7 +34,7 @@ app.use("/api/managers/stats", require("../routes/mentorStatsRoutes"));
 app.use("/api/chat", require("../routes/chatRoutes"));
 app.use("/api/mentor-bookings", require("../routes/mentorBookingRoutes"));
 app.use("/api/reviews", require("../routes/reviewRoutes"));
-
+app.use("/uploads", express.static("uploads"));
 
 
 

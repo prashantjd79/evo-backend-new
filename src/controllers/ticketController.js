@@ -1,14 +1,14 @@
 const Ticket = require("../models/Ticket");
 
-// User Raises a Support Ticket
 const createTicket = async (req, res) => {
-  const { userId, subject, message } = req.body;
-
   try {
+    const { userId, subject, message } = req.body;
+
     const ticket = await Ticket.create({
       user: userId,
       subject,
       message,
+      attachment: req.file ? req.file.path : null,
       status: "Open"
     });
 

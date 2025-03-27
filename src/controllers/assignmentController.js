@@ -3,31 +3,50 @@ const Assignment = require("../models/Assignment");
 const Lesson = require("../models/Lesson");
 
 const createAssignment = async (req, res) => {
-  const { lessonId, title, description, attachmentUrl } = req.body;
+  const { lessonId, title, description } = req.body;
 
   try {
-    // Find the lesson where the assignment should be added
+    // Check for file
+    if (!req.file) {
+      return res.status(400).json({ message: "PDF attachment is required" });
+    }
+
+    // Check lesson
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    // Create an assignment object
+    // File path (store relative URL)
+    const attachmentUrl = `assignment/${req.file.filename}`;
+
     const newAssignment = {
       title,
       description,
       attachmentUrl,
     };
 
-    // Push the assignment inside the lesson's assignments array
     lesson.assignments.push(newAssignment);
-    await lesson.save(); // Save updated lesson
+    await lesson.save();
 
-    res.status(201).json({ message: "Assignment added successfully", lesson });
+    res.status(201).json({
+      message: "Assignment added successfully",
+      assignment: {
+        _id: newAssignment._id,
+        title: newAssignment.title,
+        description: newAssignment.description,
+        attachmentUrl: newAssignment.attachmentUrl || null,
+        lessonId: lesson._id,
+      }
+    });
+    
   } catch (error) {
+    console.error("Assignment Upload Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 const updateAssignment = async (req, res) => {
   const { assignmentId } = req.params;
   const { title, description, attachmentUrl } = req.body;

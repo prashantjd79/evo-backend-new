@@ -37,42 +37,132 @@ const assignWannaBeInterestToCourse = async (req, res) => {
 
 
 
+// const createCourse = async (req, res) => {
+//   const { name, description, categoryId, subcategoryId, wannaBeInterestId } = req.body;
+
+//   try {
+//     // Validate categoryId
+//     const category = await Category.findById(categoryId);
+//     if (!category) {
+//       return res.status(404).json({ message: "Category not found" });
+//     }
+
+//     // Validate subcategoryId
+//     const subcategory = await Subcategory.findById(subcategoryId);
+//     if (!subcategory) {
+//       return res.status(404).json({ message: "Subcategory not found" });
+//     }
+
+//     // Validate WannaBeInterestId
+//     const wannaBeInterest = await WannaBeInterest.findById(wannaBeInterestId);
+//     if (!wannaBeInterest) {
+//       return res.status(404).json({ message: "WannaBeInterest not found" });
+//     }
+
+//     // Create course only if all IDs exist
+//     const course = await Course.create({
+//       name,
+//       description,
+//       category: categoryId,
+//       subcategory: subcategoryId,
+//       wannaBeInterest: wannaBeInterestId, // ✅ Store the validated reference
+//     });
+
+//     res.status(201).json({ message: "Course created successfully", course });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+
+
 const createCourse = async (req, res) => {
-  const { name, description, categoryId, subcategoryId, wannaBeInterestId } = req.body;
-
   try {
-    // Validate categoryId
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    // Validate subcategoryId
-    const subcategory = await Subcategory.findById(subcategoryId);
-    if (!subcategory) {
-      return res.status(404).json({ message: "Subcategory not found" });
-    }
-
-    // Validate WannaBeInterestId
-    const wannaBeInterest = await WannaBeInterest.findById(wannaBeInterestId);
-    if (!wannaBeInterest) {
-      return res.status(404).json({ message: "WannaBeInterest not found" });
-    }
-
-    // Create course only if all IDs exist
-    const course = await Course.create({
-      name,
+    const {
+      title,
       description,
+      whatYouWillLearn,
+      youtubeLink,
+      timing,
+      categoryId,
+      subcategoryId,
+      wannaBeInterestIds,
+      realPrice,
+      discountedPrice,
+      tags,
+      createdBy,
+      review // ✅ Admin can provide a review during creation
+    } = req.body;
+
+    // 🧠 Parse comma-separated WannaBeInterest IDs
+    let parsedWannaBeInterestIds = [];
+    if (typeof wannaBeInterestIds === "string") {
+      parsedWannaBeInterestIds = wannaBeInterestIds.split(",").map(id => id.trim());
+    }
+
+    // ✅ Validate category
+    const category = await Category.findById(categoryId);
+    if (!category) return res.status(404).json({ message: "Category not found" });
+
+    // ✅ Validate subcategory
+    const subcategory = await Subcategory.findById(subcategoryId);
+    if (!subcategory) return res.status(404).json({ message: "Subcategory not found" });
+
+    // ✅ Validate WannaBeInterest
+    const validWannaBeInterests = await WannaBeInterest.find({
+      _id: { $in: parsedWannaBeInterestIds }
+    });
+
+    if (validWannaBeInterests.length !== parsedWannaBeInterestIds.length) {
+      return res.status(400).json({ message: "Some WannaBeInterest IDs are invalid" });
+    }
+
+    // ✅ Handle file upload path
+    const photo = req.file ? `course/${req.file.filename}` : null;
+
+    // ✅ Optional tags
+    const parsedTags = tags?.split(",").map(tag => tag.trim()) || [];
+
+    // ✅ Admin review setup
+    const reviews = review
+      ? [{
+          student: null,
+          rating: 5,
+          comment: review,
+          createdAt: new Date()
+        }]
+      : [];
+
+    // ✅ Create course
+    const course = await Course.create({
+      title,
+      description,
+      whatYouWillLearn,
+      youtubeLink,
+      timing,
       category: categoryId,
       subcategory: subcategoryId,
-      wannaBeInterest: wannaBeInterestId, // ✅ Store the validated reference
+      wannaBeInterest: parsedWannaBeInterestIds,
+      realPrice,
+      discountedPrice,
+      photo,
+      tags: parsedTags,
+      reviews,
+      createdBy: createdBy || "Admin"
     });
 
     res.status(201).json({ message: "Course created successfully", course });
+
   } catch (error) {
+    console.error("Course creation failed:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
 
 const getAllCourses = async (req, res) => {
   try {

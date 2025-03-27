@@ -3,30 +3,43 @@ const Course = require("../models/Course");
 const User = require("../models/User");
 
 const createBatch = async (req, res) => {
-    const { courseId, name, startDate, endDate } = req.body;
-  
-    try {
-      // Validate courseId
-      const course = await Course.findById(courseId);
-      if (!course) {
-        return res.status(404).json({ message: "Course not found" });
-      }
-  
-      // Create batch only if courseId is valid
-      const batch = await Batch.create({
-        course: courseId,
-        name,
-        startDate,
-        endDate,
-        students: [], // Default empty student array
-        mentor: null, // Default no mentor assigned
-      });
-  
-      res.status(201).json({ message: "Batch created successfully", batch });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+  const { name, courseId, description, time, batchWeekType, startDate, endDate } = req.body;
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
     }
-  };
+
+    const batch = await Batch.create({
+      name,
+      description,
+      time,
+      batchWeekType,
+      startDate,
+      endDate,
+      course: courseId,
+      students: [],
+      mentor: null,
+    });
+
+    res.status(201).json({
+      message: "Batch created successfully",
+      batch: {
+        _id: batch._id,
+        name: batch.name,
+        description: batch.description,
+        time: batch.time,
+        batchWeekType: batch.batchWeekType,
+        startDate: batch.startDate,
+        endDate: batch.endDate,
+        course: batch.course,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
   const assignStudentsToBatch = async (req, res) => {
     const { batchId, studentIds } = req.body; // Expect an array of student IDs

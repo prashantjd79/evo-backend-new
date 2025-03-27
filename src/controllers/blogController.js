@@ -7,18 +7,19 @@ const createBlog = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized: Publisher ID missing" });
     }
 
-    // Ensure the publisher exists in the database
     const publisher = await User.findById(req.publisher.id);
     if (!publisher || publisher.role !== "Publisher") {
       return res.status(403).json({ message: "Access denied: Invalid publisher" });
     }
 
-    // Create the blog strictly with the logged-in publisher's ID
     const blog = await Blog.create({
       title: req.body.title,
       content: req.body.content,
-      creator: req.publisher.id, // ✅ Fetch from token, no external input
-      status: "Pending",
+      tags: req.body.tags ? req.body.tags.split(",").map(tag => tag.trim()) : [],
+      image: req.file?.filename || "",
+      conclusion: req.body.conclusion,
+      creator: req.publisher.id,
+      status: "Pending"
     });
 
     res.status(201).json({ message: "Blog submitted for approval", blog });
@@ -26,6 +27,7 @@ const createBlog = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const updateBlog = async (req, res) => {
   try {

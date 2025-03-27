@@ -1,11 +1,20 @@
 const Announcement = require("../models/Announcement");
 
-// Create a New Announcement
 const createAnnouncement = async (req, res) => {
-  const { title, message, roles } = req.body;
-
   try {
-    const announcement = await Announcement.create({ title, message, roles });
+    const { title, description, roles } = req.body;
+
+    // Parse roles if sent as a stringified array
+    const parsedRoles = typeof roles === "string" ? JSON.parse(roles) : roles;
+
+    const image = req.file ? req.file.path : null;
+
+    const announcement = await Announcement.create({
+      title,
+      description,
+      roles: parsedRoles,
+      image,
+    });
 
     res.status(201).json({ message: "Announcement created successfully", announcement });
   } catch (error) {

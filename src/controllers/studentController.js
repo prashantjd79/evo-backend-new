@@ -10,9 +10,9 @@ const Course = require("../models/Course");
 const Path = require("../models/Path");
 const EvoScore = require("../models/EvoScore");
 const { updateEvoScore } = require("../utils/evoScoreUtils"); // ✅ Correct
-
-
-
+const mongoose = require("mongoose");
+const path = require("path");
+const fs = require("fs");
 
 const enrollInCourse = async (req, res) => {
   const { courseId } = req.body; // ✅ No studentId in request body
@@ -134,38 +134,89 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
-// Student Registration
+// // Student Registration
+// const registerStudent = async (req, res) => {
+//   const { name, email, password, wannaBeInterest } = req.body;
+
+//   try {
+//     // Check if email already exists
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) return res.status(400).json({ message: "Email already in use" });
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create student user
+//     const student = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role: "Student",
+//       wannaBeInterest,
+//     });
+
+//     res.status(201).json({
+//       _id: student.id,
+//       name: student.name,
+//       email: student.email,
+//       wannaBeInterest: student.wannaBeInterest,
+//       token: generateToken(student.id),
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const registerStudent = async (req, res) => {
-  const { name, email, password, wannaBeInterest } = req.body;
+  const {
+    name,
+    dob,
+    email,
+    password,
+    contactNumber,
+    guardianName,
+    address,
+    education,
+    preferredLanguages,
+    wannaBeInterest,
+    experience,
+  } = req.body;
 
   try {
-    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "Email already in use" });
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create student user
+    const photo = req.file ? `students/${req.file.filename}` : null;
+
     const student = await User.create({
       name,
+      dob,
       email,
       password: hashedPassword,
-      role: "Student",
+      contactNumber,
+      photo,
+      guardianName,
+      address,
+      education,
+      preferredLanguages: preferredLanguages ? preferredLanguages.split(",") : [],
       wannaBeInterest,
+      experience: experience ? experience.split(",") : [],
+      role: "Student",
     });
 
     res.status(201).json({
-      _id: student.id,
+      _id: student._id,
       name: student.name,
       email: student.email,
-      wannaBeInterest: student.wannaBeInterest,
-      token: generateToken(student.id),
+      token: generateToken(student._id),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const loginStudent = async (req, res) => {
   const { email, password } = req.body;
@@ -277,55 +328,103 @@ const applyPromoCodeAndPurchase = async (req, res) => {
 
 
 
+// const submitAssignment = async (req, res) => {
+//   const { lessonId, fileUrl } = req.body;
+//   const studentId = req.user._id;
+
+//   try {
+//     // ✅ Validate lesson
+//     const lesson = await Lesson.findById(lessonId);
+//     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+
+//     console.log("Lesson Data:", lesson); // 🔹 Debugging log
+
+//     // ✅ Ensure lesson has a courseId
+//     if (!lesson.course) {
+//       console.error("Error: Lesson does not have a courseId!");
+//       return res.status(500).json({ message: "Lesson does not have a valid courseId." });
+//     }
+
+//     // ✅ Check if student already submitted an assignment for this lesson
+//     const existingSubmission = await SubmittedAssignment.findOne({
+//       student: studentId,
+//       lesson: lessonId
+//     });
+
+//     if (existingSubmission) {
+//       return res.status(400).json({ message: "You have already submitted an assignment for this lesson." });
+//     }
+
+//     // ✅ Save assignment submission with `courseId`
+//     const submission = await SubmittedAssignment.create({
+//       student: studentId,
+//       lesson: lessonId,
+//       course: lesson.course,  // ✅ Now `courseId` is explicitly stored
+//       fileUrl
+//     });
+
+//     console.log("Assignment Submitted Successfully:", submission); // 🔹 Debugging log
+
+//     res.status(201).json({ 
+//       message: "Assignment submitted successfully. Awaiting grading.", 
+//       submission 
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
 const submitAssignment = async (req, res) => {
-  const { lessonId, fileUrl } = req.body;
+  const { lessonId, description } = req.body;
   const studentId = req.user._id;
 
   try {
-    // ✅ Validate lesson
+    if (!req.file) {
+      return res.status(400).json({ message: "PDF file is required" });
+    }
+
     const lesson = await Lesson.findById(lessonId);
-    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
 
-    console.log("Lesson Data:", lesson); // 🔹 Debugging log
-
-    // ✅ Ensure lesson has a courseId
     if (!lesson.course) {
-      console.error("Error: Lesson does not have a courseId!");
       return res.status(500).json({ message: "Lesson does not have a valid courseId." });
     }
 
-    // ✅ Check if student already submitted an assignment for this lesson
-    const existingSubmission = await SubmittedAssignment.findOne({
-      student: studentId,
-      lesson: lessonId
-    });
+    const existing = await SubmittedAssignment.findOne({ student: studentId, lesson: lessonId });
 
-    if (existingSubmission) {
-      return res.status(400).json({ message: "You have already submitted an assignment for this lesson." });
+    if (existing) {
+      const filePath = path.join("uploads", "submitted", req.file.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Remove duplicate file
+      return res.status(400).json({ message: "You already submitted this assignment." });
     }
 
-    // ✅ Save assignment submission with `courseId`
     const submission = await SubmittedAssignment.create({
+      _id: new mongoose.Types.ObjectId(),
       student: studentId,
       lesson: lessonId,
-      course: lesson.course,  // ✅ Now `courseId` is explicitly stored
-      fileUrl
+      course: lesson.course,
+      fileUrl: `submitted/${req.file.filename}`,
+      description: description || "",
     });
 
-    console.log("Assignment Submitted Successfully:", submission); // 🔹 Debugging log
-
-    res.status(201).json({ 
-      message: "Assignment submitted successfully. Awaiting grading.", 
-      submission 
+    res.status(201).json({
+      message: "Assignment submitted successfully.",
+      submission: {
+        _id: submission._id,
+        fileUrl: submission.fileUrl,
+        description: submission.description,
+        lessonId: submission.lesson,
+        studentId: submission.student,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
-
-
 
 
 

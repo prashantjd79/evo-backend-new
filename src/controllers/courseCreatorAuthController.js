@@ -12,7 +12,18 @@ const generateToken = (id, role) => {
   
 
   const registerCourseCreator = async (req, res) => {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      username,
+      email,
+      password,
+      dob,
+      contactNumber,
+      address,
+      workingMode,
+      education,
+      about,
+    } = req.body;
   
     try {
       const exists = await User.findOne({ email });
@@ -21,20 +32,29 @@ const generateToken = (id, role) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       const courseCreator = await User.create({
         name,
+        username,
         email,
         password: hashedPassword,
         role: "Course Creator",
-        isApproved: false, // ✅ Admin approval required
+        isApproved: false,
+        dob,
+        contactNumber,
+        address,
+        workingMode,
+        education,
+        bio: about,
+        photo: req.file?.path || "",
       });
   
       res.status(201).json({
-        message: "Registration successful. Waiting for admin approval.",
+        message: "Course Creator registered successfully. Awaiting admin approval.",
         courseCreator,
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   };
+  
   
 
 const loginCourseCreator = async (req, res) => {

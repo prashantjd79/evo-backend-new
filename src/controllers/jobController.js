@@ -1,6 +1,6 @@
 const Job = require("../models/Job");
 const User = require("../models/User");
-
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -9,23 +9,68 @@ const jwt = require("jsonwebtoken");
 
 
 
-// Employer Posts a Job
 const postJob = async (req, res) => {
-  const { title, description, employerId } = req.body;
-
   try {
+    const {
+      title,
+      description,
+      employer, // this should be ObjectId string
+      companyName,
+      location,
+      jobType,
+      experienceRequired,
+      salary,
+      applicationDeadline,
+      skillsRequired,
+      openings
+    } = req.body;
+
+    console.log("📥 Incoming Job Payload:", req.body);
+
+    // ✅ Validate employer ID format
+    if (!mongoose.Types.ObjectId.isValid(employer)) {
+      console.log("❌ Invalid Employer ID Format:", employer);
+      return res.status(400).json({ message: "Invalid Employer ID format" });
+    }
+
+    // ✅ Check if employer exists and is approved
+    const employerUser = await User.findOne({ _id: employer, role: "Employer", isApproved: true });
+
+    if (!employerUser) {
+      console.log("❌ Employer not found or not approved:", employer);
+      return res.status(404).json({ message: "Employer not found or not approved" });
+    }
+
+    console.log("✅ Employer validated:", employerUser.email);
+
+    // ✅ Create job entry
     const job = await Job.create({
       title,
       description,
-      employer: employerId,
+      employer,
+      companyName,
+      location,
+      jobType,
+      experienceRequired,
+      salary,
+      applicationDeadline,
+      skillsRequired: Array.isArray(skillsRequired)
+        ? skillsRequired
+        : skillsRequired.split(",").map(skill => skill.trim()),
+      openings: parseInt(openings) || 1,
       status: "Pending"
     });
 
-    res.status(201).json({ message: "Job posted successfully and pending approval", job });
+    console.log("✅ Job created:", job._id);
+
+    res.status(201).json({ message: "Job posted successfully", job });
   } catch (error) {
+    console.error("❌ Error in postJob:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Admin Approves/Rejects a Job
 const reviewJob = async (req, res) => {
@@ -97,31 +142,44 @@ const getJobApplicants = async (req, res) => {
 
 
 const registerEmployer = async (req, res) => {
-    const { name, email, password, companyName } = req.body;
-  
-    try {
-      // Check if email already exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) return res.status(400).json({ message: "Email already in use" });
-  
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      // Create employer user (without wannaBeInterest)
-      const employer = await User.create({
-        name,
-        email,
-        password: hashedPassword,
-        role: "Employer",
-        companyName,
-        isApproved: false, // Requires Admin Approval
-      });
-  
-      res.status(201).json({ message: "Employer registered, pending approval", employer });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
+  const {
+    type,
+    name,
+    email,
+    password,
+    contactNumber,
+    industry,
+    address,
+    companySize,
+  } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "Email already in use" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const employer = await User.create({
+      type,
+      name,
+      email,
+      password: hashedPassword,
+      role: "Employer",
+      contactNumber,
+      industry,
+      address,
+      companySize,
+      companyName: name, // Optional: or keep separate
+      photo: req.file?.path,
+      isApproved: false,
+    });
+
+    res.status(201).json({ message: "Employer registered, pending approval", employer });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
   
 
 // Login Employer
