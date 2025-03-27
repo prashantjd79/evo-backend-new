@@ -4,26 +4,35 @@
 
 const PromoCode = require("../models/PromoCode");
 
+const Course = require("../models/Course");
 
 
 
 
-// Create a Promo Code
 const createPromoCode = async (req, res) => {
-  const { code, discountPercentage, courseId, pathId, validUntil } = req.body;
-
   try {
-    // Ensure that a promo code is associated with either a course or a path (not both)
-    if (!courseId && !pathId) {
-      return res.status(400).json({ message: "Promo code must be linked to either a Course or a Path." });
+    const { code, discountPercentage, courseId, validUntil, usageLimit } = req.body;
+
+    // ✅ Validate courseId if provided
+    if (courseId) {
+      const courseExists = await Course.findById(courseId);
+      if (!courseExists) {
+        return res.status(400).json({ message: "Invalid Course ID. Course does not exist." });
+      }
+    }
+
+    // ✅ Prevent both course & path
+    if (!courseId && !usageLimit) {
+      return res.status(400).json({ message: "Promo code must be linked to a course or be overall (with usage limit)" });
     }
 
     const promoCode = await PromoCode.create({
       code,
       discountPercentage,
       course: courseId || null,
-      path: pathId || null,
-      validUntil,
+      validUntil: courseId ? validUntil : null,
+      usageLimit: usageLimit || null,
+      usageCount: 0,
       isActive: true
     });
 
@@ -32,6 +41,56 @@ const createPromoCode = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+const applyPromoCode = async (req, res) => {
+  const { code, courseId } = req.body;
+
+  try {
+    const promo = await PromoCode.findOne({ code });
+
+    if (!promo || !promo.isActive) {
+      return res.status(404).json({ message: "Invalid or inactive promo code" });
+    }
+
+    // Course specific promo
+    if (promo.course) {
+      if (promo.course.toString() !== courseId) {
+        return res.status(400).json({ message: "This code is not valid for this course" });
+      }
+
+      if (promo.validUntil && new Date(promo.validUntil) < new Date()) {
+        return res.status(400).json({ message: "Promo code has expired" });
+      }
+
+      return res.status(200).json({
+        message: "Promo code applied successfully",
+        discountPercentage: promo.discountPercentage,
+        target: "course"
+      });
+    }
+
+    // Overall promo
+    if (promo.usageLimit && promo.usageCount >= promo.usageLimit) {
+      return res.status(400).json({ message: "Promo code usage limit reached" });
+    }
+
+    // Increment usage count
+    promo.usageCount += 1;
+    await promo.save();
+
+    return res.status(200).json({
+      message: "Promo code applied successfully",
+      discountPercentage: promo.discountPercentage,
+      target: "overall"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 // Get All Promo Codes
 const getAllPromoCodes = async (req, res) => {
@@ -65,4 +124,4 @@ const updatePromoStatus = async (req, res) => {
 
 
 
-module.exports = { createPromoCode, getAllPromoCodes, updatePromoStatus };
+module.exports = { createPromoCode, getAllPromoCodes, updatePromoStatus,applyPromoCode };

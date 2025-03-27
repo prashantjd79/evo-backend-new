@@ -135,7 +135,8 @@ const loginMentor = async (req, res) => {
 
 const getSubmittedAssignments = async (req, res) => {
   try {
-    const assignments = await SubmittedAssignment.find().populate("student", "name email"); // Change "student" to "user" if required
+    const assignments = await SubmittedAssignment.find().populate("student", "name email").populate("lesson","course")
+     // Change "student" to "user" if required
     res.json(assignments);
   } catch (error) {
     res.status(500).json({ message: error.message });

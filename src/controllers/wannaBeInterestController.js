@@ -1,28 +1,36 @@
 const WannaBeInterest = require("../models/WannaBeInterest");
 
 const createWannaBeInterest = async (req, res) => {
-  try {
-    const { title, description } = req.body;
+  const { description } = req.body;
+  const title = req.body.title; // ✅ ensure it's explicitly pulled from req.body
+  const image = req.file?.path;
 
-    if (!title || !req.file) {
-      return res.status(400).json({ message: "Title and image are required." });
+  try {
+    // Basic validation
+    if (!title || !description || !image) {
+      return res.status(400).json({ message: "Title, description, and image are required." });
     }
 
-    // Check for existing title
+    // Check duplicate by title
     const exists = await WannaBeInterest.findOne({ title });
-    if (exists) return res.status(400).json({ message: "This title already exists" });
+    if (exists) {
+      return res.status(400).json({ message: "This entry already exists." });
+    }
 
     const newEntry = await WannaBeInterest.create({
       title,
       description,
-      image: req.file.path, // multer stores the path
+      image,
     });
 
-    res.status(201).json({ message: "Wanna Be Interest created successfully", newEntry });
+    res.status(201).json({ message: "Wanna Be/Interest added successfully", newEntry });
   } catch (error) {
+    console.error("❌ Error creating WannaBeInterest:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Get all "Wanna Be" and "Interests"
 const getAllWannaBeInterest = async (req, res) => {
