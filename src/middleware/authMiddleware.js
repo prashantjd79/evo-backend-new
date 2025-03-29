@@ -25,7 +25,6 @@ const protectMentor = (req, res, next) => {
 };
 
 
-// Admin Authentication Middleware
 const adminProtect = (req, res, next) => {
   let token;
 
@@ -49,30 +48,7 @@ const adminProtect = (req, res, next) => {
 };
 
 
-// const studentProtect = async (req, res, next) => {
-//   let token;
 
-//   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-//     try {
-//       token = req.headers.authorization.split(" ")[1];
-//       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-//       // ✅ Fetch student from DB & attach to `req.student`
-//       const student = await User.findById(decoded.id).select("-password");
-
-//       if (!student || student.role !== "Student") {
-//         return res.status(403).json({ message: "Access denied. Students only." });
-//       }
-
-//       req.student = student; // ✅ Assign student to `req.student`
-//       next();
-//     } catch (error) {
-//       return res.status(401).json({ message: "Not authorized, token failed" });
-//     }
-//   } else {
-//     return res.status(401).json({ message: "Not authorized, no token" });
-//   }
-// };
 
 const studentProtect = async (req, res, next) => {
   let token;

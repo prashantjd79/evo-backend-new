@@ -2,6 +2,9 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("../config/db");
 const cors=require("cors");
+const certificateRoutes = require("../routes/certificateRoutes");
+
+
 
 dotenv.config();
 connectDB();
@@ -12,7 +15,7 @@ app.use(express.json());
 app.use(cors());
 app.use("/api/admin", require("../routes/adminRoutes"));
 app.use("/api/wanna-be-interest", require("../routes/wannaBeInterestRoutes"));
-
+app.use("/api/certificates", require("../routes/certificateRoutes"));
 app.use("/api/categories", require("../routes/categoryRoutes"));
 app.use("/api/subcategories", require("../routes/subcategoryRoutes"));
 app.use("/api/courses", require("../routes/courseRoutes"));

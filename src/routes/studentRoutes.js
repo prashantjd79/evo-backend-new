@@ -1,15 +1,12 @@
 const express = require("express");
-const { registerStudent, loginStudent, getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
+const { signupStudent, loginStudent,verifyOtp, getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
 const { studentProtect } = require("../middleware/authMiddleware");
 const uploadSubmittedAssignment = require("../middleware/uploadSubmittedAssignment");
 const uploadStudentPhoto = require("../middleware/uploadStudentPhoto");
 const router = express.Router();
 
-router.post(
-  "/signup",
-  uploadStudentPhoto.single("photo"),
-  registerStudent
-);
+router.post("/signup", uploadStudentPhoto.single("photo"), signupStudent);
+router.post("/verify-otp", verifyOtp);
 router.post("/login", loginStudent);
 router.get("/me", studentProtect, getStudentProfile);
 

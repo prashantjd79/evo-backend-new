@@ -13,18 +13,86 @@ const { updateEvoScore } = require("../utils/evoScoreUtils"); // ✅ Correct
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
+const generateOtp = require("../utils/generateOtp");
+const { sendOtpEmail } = require("../utils/email");
+const Otp = require("../models/Otp");
+
+
+// Generate JWT Token
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+};
+const signupStudent = async (req, res) => {
+  const {
+    name, dob, email, password, contactNumber, guardianName,
+    address, education, preferredLanguages, wannaBeInterest, experience,
+  } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "Email already in use" });
+
+    const otp = generateOtp();
+
+    await Otp.create({
+      email,
+      otp,
+      data: {
+        name, dob, email, password, contactNumber, guardianName,
+        address, education, preferredLanguages, wannaBeInterest, experience,
+        photo: req.file ? `students/${req.file.filename}` : null,
+      },
+    });
+
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({ message: "OTP sent to email for verification." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const loginStudent = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const student = await User.findOne({ email, role: "Student" });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    if (!student.isVerified) {
+      return res.status(403).json({ message: "Email not verified. Please verify first." });
+    }
+
+    const isMatch = await bcrypt.compare(password, student.password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    res.json({
+      _id: student._id,
+      name: student.name,
+      email: student.email,
+      role: student.role,
+      wannaBeInterest: student.wannaBeInterest,
+      token: generateToken(student._id, student.role),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 
 const enrollInCourse = async (req, res) => {
   const { courseId } = req.body; // ✅ No studentId in request body
 
   try {
     // ✅ Ensure student is authenticated from token
-    if (!req.student || !req.student.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: "Unauthorized: No student ID found in token" });
     }
 
     // ✅ Fetch the authenticated student
-    const student = await User.findById(req.student.id);
+    const student = await User.findById(req.user._id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     // ✅ Validate course existence
@@ -129,10 +197,7 @@ const getEnrolledPaths = async (req, res) => {
 
 
 
-// Generate JWT Token
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
-};
+
 
 // // Student Registration
 // const registerStudent = async (req, res) => {
@@ -167,81 +232,71 @@ const generateToken = (id, role) => {
 //   }
 // };
 
-const registerStudent = async (req, res) => {
-  const {
-    name,
-    dob,
-    email,
-    password,
-    contactNumber,
-    guardianName,
-    address,
-    education,
-    preferredLanguages,
-    wannaBeInterest,
-    experience,
-  } = req.body;
+
+
+
+
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email already in use" });
+    const otpRecord = await Otp.findOne({ email, otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { data } = otpRecord;
 
-    const photo = req.file ? `students/${req.file.filename}` : null;
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const student = await User.create({
-      name,
-      dob,
-      email,
+      ...data,
       password: hashedPassword,
-      contactNumber,
-      photo,
-      guardianName,
-      address,
-      education,
-      preferredLanguages: preferredLanguages ? preferredLanguages.split(",") : [],
-      wannaBeInterest,
-      experience: experience ? experience.split(",") : [],
       role: "Student",
+      isVerified: true, // verified now
     });
+
+    await Otp.deleteOne({ email, otp });
 
     res.status(201).json({
       _id: student._id,
       name: student.name,
       email: student.email,
-      token: generateToken(student._id),
+      message: "Email verified successfully. You can now login.",
     });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 
-const loginStudent = async (req, res) => {
-  const { email, password } = req.body;
+// const loginStudent = async (req, res) => {
+//   const { email, password } = req.body;
 
-  try {
-    const student = await User.findOne({ email, role: "Student" });
-    if (!student) return res.status(404).json({ message: "Student not found" });
+//   try {
+//     const student = await User.findOne({ email, role: "Student" });
+//     if (!student) return res.status(404).json({ message: "Student not found" });
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, student.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+//     // Check password
+//     const isMatch = await bcrypt.compare(password, student.password);
+//     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-    // Generate Token with Role
-    res.json({
-      _id: student.id,
-      name: student.name,
-      email: student.email,
-      role: student.role, // ✅ Add role to response
-      wannaBeInterest: student.wannaBeInterest,
-      token: generateToken(student.id, student.role), // ✅ Token includes role
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     // Generate Token with Role
+//     res.json({
+//       _id: student.id,
+//       name: student.name,
+//       email: student.email,
+//       role: student.role, // ✅ Add role to response
+//       wannaBeInterest: student.wannaBeInterest,
+//       token: generateToken(student.id, student.role), // ✅ Token includes role
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
 // Get Student Profile
 const getStudentProfile = async (req, res) => {
   try {
@@ -502,4 +557,4 @@ const submitQuiz = async (req, res) => {
 
 
 
-module.exports = { registerStudent, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+module.exports = { signupStudent,verifyOtp, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

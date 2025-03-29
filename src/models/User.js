@@ -88,6 +88,11 @@ const userSchema = new mongoose.Schema({
   education: { type: String },
   preferredLanguages: [{ type: String }],
   experience: [{ type: String }],
+  otp: String,
+  otpExpires: Date,
+  isVerified: { type: Boolean, default: false },
+  
+
 
   enrolledCourses: [
     {
