@@ -92,16 +92,16 @@ const applyPromoCode = async (req, res) => {
 
 
 
-// Get All Promo Codes
 const getAllPromoCodes = async (req, res) => {
   try {
     const promoCodes = await PromoCode.find()
-      .populate("course", "name")
-      .populate("path", "name");
+      .populate("course", "title") // populate course title if it's course-specific
+      .sort({ createdAt: -1 });
 
-    res.json(promoCodes);
+    res.json({ promoCodes });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching promo codes:", error);
+    res.status(500).json({ message: "Failed to fetch promo codes" });
   }
 };
 

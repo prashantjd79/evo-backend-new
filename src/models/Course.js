@@ -21,7 +21,8 @@ const courseSchema = new mongoose.Schema({
   photo: { type: String }, // stores filename or image path
   youtubeLink: { type: String },
   timing: { type: String },
-  category: { type: mongoose.Schema.Types.ObjectId, ref: "category", required: true }, // e.g., "6 weeks", "3 hours"
+  // category: { type: mongoose.Schema.Types.ObjectId, ref: "category", required: true },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
   wannaBeInterest: [{ type: mongoose.Schema.Types.ObjectId, ref: "WannaBeInterest", required: true }],
   subcategory: { type: mongoose.Schema.Types.ObjectId, ref: "Subcategory", required: true },
   realPrice: { type: Number },

@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/", adminProtect, createPromoCode); // Create promo code
 router.post("/apply",studentProtect,applyPromoCode);
-router.get("/", adminProtect, getAllPromoCodes); // Get all promo codes
+router.get("/promocodes", adminProtect, getAllPromoCodes); // Get all promo codes
 router.put("/status", adminProtect, updatePromoStatus); 
 // Activate/Deactivate a promo code
  // Apply a promo code

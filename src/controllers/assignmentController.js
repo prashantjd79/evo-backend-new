@@ -48,31 +48,38 @@ const createAssignment = async (req, res) => {
 
 
 const updateAssignment = async (req, res) => {
-  const { assignmentId } = req.params;
-  const { title, description, attachmentUrl } = req.body;
+  const { lessonId, assignmentId, title, description } = req.body;
 
   try {
-    const updatedAssignment = await Lesson.findOneAndUpdate(
-      { "assignments._id": assignmentId }, 
-      {
-        $set: {
-          "assignments.$.title": title,
-          "assignments.$.description": description,
-          "assignments.$.attachmentUrl": attachmentUrl
-        }
-      },
-      { new: true }
-    );
+    const lesson = await Lesson.findById(lessonId);
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
 
-    if (!updatedAssignment) {
-      return res.status(404).json({ message: "Assignment not found" });
+    const assignment = lesson.assignments.id(assignmentId);
+    if (!assignment) return res.status(404).json({ message: "Assignment not found" });
+
+    // Update fields
+    if (title) assignment.title = title;
+    if (description) assignment.description = description;
+
+    // If a new PDF is uploaded
+    if (req.file) {
+      assignment.attachmentUrl = `assignment/${req.file.filename}`;
     }
 
-    res.json({ message: "Assignment updated successfully", updatedAssignment });
+    await lesson.save();
+
+    res.json({
+      message: "Assignment updated successfully",
+      assignment
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 const deleteAssignment = async (req, res) => {
   const { assignmentId } = req.params;
 

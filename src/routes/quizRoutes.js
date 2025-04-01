@@ -7,5 +7,5 @@ const router = express.Router();
 router.post("/",adminProtect, createQuiz);
 router.get("/:lessonId", adminProtect, getQuizzesByLesson);
 router.delete("/quiz/:quizId", adminProtect, deleteQuiz);
-router.put("/quiz/:quizId", adminProtect, updateQuiz);
+router.put("/quiz", adminProtect, updateQuiz);
 module.exports = router;

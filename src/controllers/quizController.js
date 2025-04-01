@@ -1,28 +1,59 @@
 const Quiz = require("../models/Quiz");
+
 const Lesson = require("../models/Lesson");
 // Create a new Quiz under a Lesson
 
 
-const createQuiz = async (req, res) => {
-  const { lessonId, quizzes } = req.body; // Accept multiple quizzes as an array
+const updateQuiz = async (req, res) => {
+  const { lessonId, quizIndex, question, options, correctAnswer } = req.body;
 
   try {
-    // Check if lessonId is valid
+    const lesson = await Lesson.findById(lessonId);
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+
+    if (quizIndex < 0 || quizIndex >= lesson.quizzes.length) {
+      return res.status(400).json({ message: "Invalid quiz index" });
+    }
+
+    // Update the quiz
+    const quiz = lesson.quizzes[quizIndex];
+    if (question) quiz.question = question;
+    if (options) quiz.options = options;
+    if (correctAnswer) quiz.correctAnswer = correctAnswer;
+
+    await lesson.save();
+
+    res.json({ message: "Quiz updated successfully", quiz });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+const createQuiz = async (req, res) => {
+  const { lessonId, quizzes } = req.body;
+
+  try {
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    // Validate quizzes input
     if (!Array.isArray(quizzes) || quizzes.length === 0) {
       return res.status(400).json({ message: "Invalid quizzes data" });
     }
 
-    // Append quizzes to the existing lesson
-    lesson.quizzes.push(...quizzes);
-    await lesson.save();
+    // 🚨 Replace existing quizzes instead of pushing
+    lesson.quizzes = quizzes;
 
-    res.status(201).json({ message: "Quizzes added successfully", lesson });
+    await lesson.save();
+    res.status(201).json({
+      message: "Quizzes replaced successfully",
+      lesson
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -44,32 +75,7 @@ const getQuizzesByLesson = async (req, res) => {
   }
 };
   
-const updateQuiz = async (req, res) => {
-  const { quizId } = req.params;
-  const { question, options, correctAnswer } = req.body;
 
-  try {
-    const updatedQuiz = await Lesson.findOneAndUpdate(
-      { "quizzes._id": quizId }, 
-      {
-        $set: {
-          "quizzes.$.question": question,
-          "quizzes.$.options": options,
-          "quizzes.$.correctAnswer": correctAnswer
-        }
-      },
-      { new: true }
-    );
-
-    if (!updatedQuiz) {
-      return res.status(404).json({ message: "Quiz not found" });
-    }
-
-    res.json({ message: "Quiz updated successfully", updatedQuiz });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 const deleteQuiz = async (req, res) => {
   const { quizId } = req.params;
 

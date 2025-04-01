@@ -4,11 +4,14 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Mentor = require("../models/Mentor");
 const Blog = require("../models/Blog");
-
+const SubmittedAssignment = require("../models/SubmittedAssignment");   
 const Transaction = require("../models/Transaction");
 const { Parser } = require("json2csv"); // For CSV export
 const fs = require("fs");
-
+const Certificate = require("../models/Certificate");
+const Batch = require("../models/Batch");
+const Job = require("../models/Job");
+const Course = require("../models/Course");
 // Get Transactions (Filter by Course & Path)
 const getTransactions = async (req, res) => {
   const { courseId, pathId } = req.query;
@@ -313,7 +316,119 @@ const assignMentorsToManager = async (req, res) => {
 
 
 
-module.exports = { registerAdmin, loginAdmin,approveUser,
-   getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getUserProfile, approveOrRejectBlog,
+const getAllSubmittedAssignments = async (req, res) => {
+  try {
+    const submissions = await SubmittedAssignment.find()
+      .populate("student", "name email")
+      .populate("course", "title")
+      .populate("lesson", "title")
+      .sort({ submittedAt: -1 });
+
+    res.json({ submissions });
+  } catch (error) {
+    console.error("Error fetching submitted assignments:", error);
+    res.status(500).json({ message: "Failed to fetch submitted assignments" });
+  }
+};
+
+const getAllCertificates = async (req, res) => {
+  try {
+    const certificates = await Certificate.find()
+      .populate("student", "name email")
+      .populate("course", "title")
+      .sort({ issueDate: -1 });
+
+    res.json({ certificates });
+  } catch (error) {
+    console.error("Error fetching certificates:", error);
+    res.status(500).json({ message: "Failed to fetch certificates" });
+  }
+};
+
+
+const getBatchesByCourseId = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const batches = await Batch.find({ course: courseId })
+      .populate({ path: "mentor", model: "User", select: "name email" })
+      .populate({ path: "students", model: "User", select: "name email" })
+      .populate("course", "title");
+
+    res.json({ batches });
+  } catch (error) {
+    console.error("Error fetching batches:", error);
+    res.status(500).json({ message: "Failed to fetch batches for the course" });
+  }
+};
+const getAllBatches = async (req, res) => {
+  try {
+    const batches = await Batch.find()
+      .populate({ path: "mentor", model: "User", select: "name email" })
+      .populate({ path: "students", model: "User", select: "name email" })
+      .populate("course", "title");
+
+    res.json({ batches });
+  } catch (error) {
+    console.error("Error fetching all batches:", error);
+    res.status(500).json({ message: "Failed to fetch all batches" });
+  }
+};
+
+const getStudentsByCourseId = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const students = await User.find({
+      role: "Student",
+      "enrolledCourses.course": courseId
+    }).select("name email enrolledCourses");
+
+    res.json({ students });
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    res.status(500).json({ message: "Failed to fetch students for this course" });
+  }
+};
+const getAllCourseCreators = async (req, res) => {
+  try {
+    const creators = await User.find({ role: "Course Creator" })
+      .select("name email isApproved status createdAt");
+
+    res.json({ creators });
+  } catch (error) {
+    console.error("Error fetching course creators:", error);
+    res.status(500).json({ message: "Failed to fetch course creators" });
+  }
+};
+
+const getAllJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find()
+      .populate("employer", "name email companyName")
+      .sort({ createdAt: -1 });
+
+    res.json({ jobs });
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Failed to fetch job listings" });
+  }
+};
+const getCoursesWithDetails = async (req, res) => {
+  try {
+    const courses = await Course.find()
+      .populate("category", "title")
+      .populate("subcategory", "title")
+      .populate("wannaBeInterest", "title")
+      .select("title _id category subcategory wannaBeInterest");
+
+    res.json({ courses });
+  } catch (error) {
+    console.error("Error fetching courses with details:", error);
+    res.status(500).json({ message: "Failed to fetch courses" });
+  }
+};
+module.exports = { registerAdmin,getAllCourseCreators,getCoursesWithDetails,loginAdmin,approveUser,
+   getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,
-   getTransactions, exportTransactionsCSV ,getAllBlogs,assignMentorsToManager};
+   getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};

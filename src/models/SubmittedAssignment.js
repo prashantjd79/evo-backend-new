@@ -15,6 +15,7 @@
 const mongoose = require("mongoose");
 
 const submittedAssignmentSchema = new mongoose.Schema({
+  course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
   student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // ✅ Change "Student" to "User"
   lesson: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson", required: true },
   fileUrl: { type: String, required: true },
