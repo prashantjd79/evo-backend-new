@@ -16,6 +16,10 @@ const fs = require("fs");
 const generateOtp = require("../utils/generateOtp");
 const { sendOtpEmail } = require("../utils/email");
 const Otp = require("../models/Otp");
+const Certificate = require("../models/Certificate");
+const Batch = require("../models/Batch");
+const Job = require("../models/Job");
+
 
 
 // Generate JWT Token
@@ -79,6 +83,18 @@ const loginStudent = async (req, res) => {
   }
 };
 
+
+
+const getApprovedJobsForStudents = async (req, res) => {
+  try {
+    const jobs = await Job.find({ status: "Approved" });
+
+    res.json({ jobs });
+  } catch (error) {
+    console.error("Error fetching approved jobs:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+};
 
 
 
@@ -544,17 +560,117 @@ const submitQuiz = async (req, res) => {
 
 
 
+const getMyCertificates = async (req, res) => {
+  try {
+    const studentId = req.user._id; // From auth middleware
+
+    const certificates = await Certificate.find({ student: studentId })
+      .populate("course", "title")
+      .sort({ issueDate: -1 });
+
+    res.json({ certificates });
+  } catch (error) {
+    console.error("Error fetching student certificates:", error);
+    res.status(500).json({ message: "Failed to fetch certificates" });
+  }
+};
 
 
+const getAllCoursesForStudents = async (req, res) => {
+  try {
+    const courses = await Course.find()
+      .populate("category", "title")
+      .populate("subcategory", "title")
+      .populate("wannaBeInterest", "title")
+      .select("title photo realPrice discountedPrice tags category subcategory wannaBeInterest");
+
+    res.json({ courses });
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ message: "Failed to fetch courses" });
+  }
+};
 
 
+const getMyEnrolledCourses = async (req, res) => {
+  try {
+    const student = await User.findById(req.user._id)
+      .populate({
+        path: "enrolledCourses.course",
+        select: "title photo realPrice discountedPrice category subcategory wannaBeInterest"
+      })
+      .populate("enrolledCourses.course.category", "title")
+      .populate("enrolledCourses.course.subcategory", "title")
+      .populate("enrolledCourses.course.wannaBeInterest", "title")
+      .select("enrolledCourses");
 
+    res.json({ enrolledCourses: student.enrolledCourses });
+  } catch (error) {
+    console.error("Error fetching enrolled courses:", error);
+    res.status(500).json({ message: "Failed to fetch enrolled courses" });
+  }
+};
 
+const getBatchById = async (req, res) => {
+  const { batchId } = req.params;
 
+  try {
+    const batch = await Batch.findById(batchId)
+      .populate("course", "title")
+      .populate({ path: "mentor", model: "User", select: "name email" })
+      .populate({ path: "students", model: "User", select: "name email photo" });
 
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
 
+    res.json({ batch });
+  } catch (error) {
+    console.error("Error fetching batch:", error);
+    res.status(500).json({ message: "Failed to fetch batch" });
+  }
+};
 
+const getLessonsByCourseForStudent = async (req, res) => {
+  const { courseId } = req.params;
+  const studentId = req.user._id;
 
+  try {
+    // Check if student is enrolled
+    const student = await User.findById(studentId);
+    const isEnrolled = student.enrolledCourses.some(
+      (item) => item.course.toString() === courseId
+    );
 
+    if (!isEnrolled) {
+      return res.status(403).json({ message: "You are not enrolled in this course." });
+    }
 
-module.exports = { signupStudent,verifyOtp, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+    // Fetch lessons
+    const lessons = await Lesson.find({ course: courseId }).select(
+      "title content videoUrl resources"
+    );
+
+    res.json({ lessons });
+  } catch (error) {
+    console.error("Error fetching lessons:", error);
+    res.status(500).json({ message: "Failed to fetch lessons" });
+  }
+};
+const getMyBatches = async (req, res) => {
+  const studentId = req.user._id;
+
+  try {
+    const batches = await Batch.find({ students: studentId })
+      .populate("course", "title")
+      .populate({ path: "mentor", model: "User", select: "name email" })
+      .select("course mentor batchWeekType time description");
+
+    res.json({ batches });
+  } catch (error) {
+    console.error("Error fetching student batches:", error);
+    res.status(500).json({ message: "Failed to fetch your batches" });
+  }
+};
+
+module.exports = { signupStudent,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
