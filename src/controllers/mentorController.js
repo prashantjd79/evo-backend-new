@@ -3,9 +3,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const SubmittedAssignment = require("../models/SubmittedAssignment");
 const { updateEvoScore } = require("../utils/evoScoreUtils");
-
-
-
+const Review = require("../models/Review");
+const Blog = require("../models/Blog");
+const Ticket = require("../models/Ticket");
 
 
 // const registerMentor = async (req, res) => {
@@ -232,9 +232,55 @@ const gradeAssignment = async (req, res) => {
 // };
 
 
+const getMyProfileByRole = async (req, res) => {
+  try {
+    const id = req.user?.id || req.mentor?.id || req.student?.id || req.employer?.id || req.courseCreator?.id || req.publisher?.id || req.manager?.id;
+
+    if (!id) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await User.findById(id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ user });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+};
 
 
 
 
+const getReviewsByCourseId = async (req, res) => {
+  try {
+    const { courseId } = req.params;
 
-module.exports = { registerMentor, loginMentor,getSubmittedAssignments,gradeAssignment };
+    const reviews = await Review.find({ course: courseId })
+      .populate("user", "name photo") // ✅ Correct reference
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ reviews });
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    res.status(500).json({ message: "Failed to fetch reviews" });
+  }
+};
+
+const getApprovedBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ status: "Approved" })
+      .sort({ createdAt: -1 })
+      .populate( "title");
+
+    res.status(200).json({ blogs });
+  } catch (error) {
+    console.error("Error fetching approved blogs:", error);
+    res.status(500).json({ message: "Failed to fetch blogs" });
+  }
+};
+
+
+
+
+module.exports = { registerMentor,getApprovedBlogs, loginMentor,getSubmittedAssignments,gradeAssignment, getMyProfileByRole,getReviewsByCourseId
+  };

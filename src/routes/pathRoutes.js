@@ -1,5 +1,5 @@
 const express = require("express");
-const { createPath, assignWannaBeInterestToPath } = require("../controllers/pathController");
+const { createPath, assignWannaBeInterestToPath,getPaths } = require("../controllers/pathController");
 const {adminProtect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/multer");
 const multer = require('multer');
@@ -17,7 +17,7 @@ const setPathUploadType = (req, res, next) => {
     upload.single("photo"),
     createPath
   );
-
+  router.get("/", getPaths);
 
 // router.post("/", adminProtect, createPath);
 

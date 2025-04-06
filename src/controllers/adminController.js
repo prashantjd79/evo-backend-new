@@ -12,6 +12,10 @@ const Certificate = require("../models/Certificate");
 const Batch = require("../models/Batch");
 const Job = require("../models/Job");
 const Course = require("../models/Course");
+const WannaBeInterest = require("../models/WannaBeInterest");
+const Subcategory = require("../models/Subcategory");
+const Category = require("../models/Category");
+
 // Get Transactions (Filter by Course & Path)
 const getTransactions = async (req, res) => {
   const { courseId, pathId } = req.query;
@@ -428,7 +432,68 @@ const getCoursesWithDetails = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch courses" });
   }
 };
-module.exports = { registerAdmin,getAllCourseCreators,getCoursesWithDetails,loginAdmin,approveUser,
+
+
+const getMyAdminProfile = async (req, res) => {
+  try {
+    console.log("Requesting Admin ID:", req.admin); // Add this
+    const admin = await Admin.findById(req.admin.id).select("-password");
+
+
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    res.json({ admin });
+  } catch (error) {
+    console.error("Error fetching admin profile:", error);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+};
+
+const getAllCourses = async (req, res) => {
+  try {
+    const courses = await Course.find()
+      .populate("category", "title")
+      .populate("subcategory", "title")
+      .populate("wannaBeInterest", "title")
+      .select("title photo realPrice discountedPrice createdBy");
+
+    res.status(200).json({ courses });
+  } catch (error) {
+    console.error("Error fetching all courses:", error);
+    res.status(500).json({ message: "Failed to fetch courses" });
+  }
+};
+
+const getAllSubcategories = async (req, res) => {
+  try {
+    const subcategories = await Subcategory.find().select("title description photo");
+    res.status(200).json({ subcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Failed to fetch subcategories" });
+  }
+};
+
+const getAllCategories = async (req, res) => {
+  try {
+    const categories = await Category.find().select("title description photo");
+    res.status(200).json({ categories });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: "Failed to fetch categories" });
+  }
+};
+const getAllWannaBeInterests = async (req, res) => {
+  try {
+    const interests = await WannaBeInterest.find().select("title description image");
+    res.status(200).json({ interests });
+  } catch (error) {
+    console.error("Error fetching WannaBeInterests:", error);
+    res.status(500).json({ message: "Failed to fetch WannaBeInterests" });
+  }
+};
+
+module.exports = { registerAdmin,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,
    getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};

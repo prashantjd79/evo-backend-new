@@ -51,7 +51,7 @@ const getAllTickets = async (req, res) => {
   }
 };
 
-// Get Tickets Raised by a Specific User
+
 const getUserTickets = async (req, res) => {
   const { userId } = req.params;
 

@@ -116,6 +116,17 @@ const assignWannaBeInterestToPath = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getPaths = async (req, res) => {
+  try {
+    const paths = await Path.find()
+      .populate("courses", "title _id") // optional: populate course titles
+      .populate("wannaBeInterest", "title"); // optional: show interest title
 
+    res.status(200).json({ paths });
+  } catch (error) {
+    console.error("Error fetching paths:", error);
+    res.status(500).json({ message: "Failed to fetch paths" });
+  }
+};
 
-module.exports = { createPath, assignWannaBeInterestToPath };
+module.exports = { createPath, assignWannaBeInterestToPath ,getPaths};

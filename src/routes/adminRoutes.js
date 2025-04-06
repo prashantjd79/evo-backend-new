@@ -1,6 +1,7 @@
 const express = require("express");
-const { registerAdmin, loginAdmin ,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
-    getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog
+const { registerAdmin, loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+    getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
+    
 } = require("../controllers/adminController");
 const { adminProtect } = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -11,6 +12,7 @@ router.put("/blogs/:blogId", adminProtect, approveOrRejectBlog);
 router.post("/login", loginAdmin);
 router.put("/approve-user", adminProtect, approveUser);
 router.get("/pending-approvals", adminProtect, getPendingApprovals);
+router.get("/me", adminProtect, getMyAdminProfile);
 
 router.put("/approve", adminProtect, approveMentor);
 router.get("/pending", adminProtect, getPendingMentors);
@@ -30,4 +32,9 @@ router.get("/batches/by-course/:courseId", adminProtect, getBatchesByCourseId);
 router.get("/batches", adminProtect, getAllBatches);
 router.get("/students/by-course/:courseId", adminProtect, getStudentsByCourseId);
 router.get("/course-creators", adminProtect, getAllCourseCreators);
+router.get("/Allcourses", getAllCourses);
+router.get("/allcat", getAllCategories);
+router.get("/allsubcat", getAllSubcategories);
+router.get("/allwanna", getAllWannaBeInterests);
+
 module.exports = router;
