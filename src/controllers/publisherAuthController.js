@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Blog = require("../models/Blog");
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -74,6 +75,20 @@ const loginPublisher = async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   };
+  const getMyBlogs = async (req, res) => {
+    try {
+      const publisherId = req.publisher?.id;
+  console.log(publisherId)
+      if (!publisherId) {
+        return res.status(403).json({ message: "Access denied. Publishers only." });
+      }
   
+      const blogs = await Blog.find({ creator: publisherId }).sort({ createdAt: -1 });
+      res.json({ blogs });
+    } catch (error) {
+      console.error("Error fetching publisher blogs:", error);
+      res.status(500).json({ message: "Failed to fetch blogs" });
+    }
+  };
 
-module.exports = { registerPublisher, loginPublisher };
+module.exports = { registerPublisher, loginPublisher,getMyBlogs};
