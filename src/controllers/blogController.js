@@ -78,7 +78,24 @@ const deleteBlog = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getBlogById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id)
+      .populate("category_id", "title") // optional if you want category info
+      .lean();
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    res.json({ blog });
+  } catch (error) {
+    console.error("Error fetching blog:", error);
+    res.status(500).json({ message: "Failed to fetch blog" });
+  }
+};
 
 
-
-module.exports = { createBlog ,updateBlog,deleteBlog};
+module.exports = { createBlog ,updateBlog,deleteBlog,getBlogById};

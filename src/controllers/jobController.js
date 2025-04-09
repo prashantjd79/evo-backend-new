@@ -112,6 +112,11 @@ const applyForJob = async (req, res) => {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
+    // Initialize applicants array if undefined
+    if (!Array.isArray(job.applicants)) {
+      job.applicants = [];
+    }
+
     if (!job.applicants.includes(studentId)) {
       job.applicants.push(studentId);
       await job.save();
@@ -119,9 +124,11 @@ const applyForJob = async (req, res) => {
 
     res.json({ message: "Application submitted successfully", job });
   } catch (error) {
+    console.error("Error applying for job:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Get All Job Applications for a Job
 const getJobApplicants = async (req, res) => {
@@ -221,6 +228,24 @@ const loginEmployer = async (req, res) => {
 
 
 
+
+const getStudentDetailsById = async (req, res) => {
+  try {
+    const studentId = req.params.id;
+
+    const student = await User.findById(studentId).select("-password");
+
+    if (!student || student.role !== "Student") {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.json({ student });
+  } catch (error) {
+    console.error("Error fetching student details:", error);
+    res.status(500).json({ message: "Failed to fetch student details" });
+  }
+};
+
   
 
-module.exports = { postJob, reviewJob, getAllJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };
+module.exports = { postJob,getStudentDetailsById, reviewJob, getAllJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };

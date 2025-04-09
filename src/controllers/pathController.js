@@ -119,8 +119,14 @@ const assignWannaBeInterestToPath = async (req, res) => {
 const getPaths = async (req, res) => {
   try {
     const paths = await Path.find()
-      .populate("courses", "title _id") // optional: populate course titles
-      .populate("wannaBeInterest", "title"); // optional: show interest title
+      .populate({
+        path: "courses",
+        select: "title _id"
+      })
+      .populate({
+        path: "wannaBeInterest", // this is an array
+        select: "title"
+      });
 
     res.status(200).json({ paths });
   } catch (error) {
@@ -129,4 +135,42 @@ const getPaths = async (req, res) => {
   }
 };
 
-module.exports = { createPath, assignWannaBeInterestToPath ,getPaths};
+
+
+const deletePath = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedPath = await Path.findByIdAndDelete(id);
+
+    if (!deletedPath) {
+      return res.status(404).json({ message: "Path not found" });
+    }
+
+    res.json({ message: "Path deleted successfully", deletedPath });
+  } catch (error) {
+    console.error("Error deleting path:", error);
+    res.status(500).json({ message: "Failed to delete path" });
+  }
+};
+
+const getPathById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const path = await Path.findById(id)
+      .populate("courses", "title _id") // populate course title and id
+      .populate("wannaBeInterest", "title _id"); // populate interest title and id
+
+    if (!path) {
+      return res.status(404).json({ message: "Path not found" });
+    }
+
+    res.json({ path });
+  } catch (error) {
+    console.error("Error fetching path by ID:", error);
+    res.status(500).json({ message: "Failed to fetch path" });
+  }
+};
+
+module.exports = { createPath,deletePath, assignWannaBeInterestToPath ,getPaths,getPathById};

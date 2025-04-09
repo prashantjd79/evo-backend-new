@@ -16,5 +16,5 @@ router.post(
 router.get("/", adminProtect, getAllSubcategories);
 
 // Get subcategories by category ID (Protected)
-router.get("/category/:categoryId", adminProtect, getSubcategoriesByCategory);
+router.get("/category/:categoryId",getSubcategoriesByCategory);
 module.exports = router;

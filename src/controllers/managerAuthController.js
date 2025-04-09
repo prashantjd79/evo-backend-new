@@ -88,6 +88,26 @@ const generateToken = (id, role) => {
       res.status(500).json({ message: error.message });
     }
   };
-  
+ //
 
-module.exports = { registerManager, loginManager };
+ const getAssignedMentors = async (req, res) => {
+  try {
+    const managerId = req.manager?.id; // Manager ID from middleware
+    if (!managerId) {
+      return res.status(403).json({ message: "Access denied. Managers only." });
+    }
+
+    const manager = await User.findById(managerId).populate("assignedMentors", "-password");
+    if (!manager) {
+      return res.status(404).json({ message: "Manager not found" });
+    }
+
+    res.json({ assignedMentors: manager.assignedMentors });
+  } catch (error) {
+    console.error("Error fetching assigned mentors:", error);
+    res.status(500).json({ message: "Failed to fetch assigned mentors" });
+  }
+};
+
+
+module.exports = { registerManager,getAssignedMentors, loginManager };

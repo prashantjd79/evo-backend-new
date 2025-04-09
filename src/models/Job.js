@@ -6,6 +6,8 @@ const jobSchema = new mongoose.Schema({
   employer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   companyName: { type: String, required: true },
   location: { type: String, required: true },
+  applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
   jobType: {
     type: String,
     enum: ["Full-Time", "Part-Time", "Internship", "Contract"],

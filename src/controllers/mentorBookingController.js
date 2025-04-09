@@ -1,5 +1,6 @@
 const MentorBooking = require("../models/MentorBooking");
 const User = require("../models/User");
+const Batch = require("../models/Batch");
 
 // // View Available Mentors
 // const getAvailableMentors = async (req, res) => {
@@ -76,4 +77,74 @@ const getMentorBookings = async (req, res) => {
 };
 
 
-module.exports = {  bookMentorSession, getStudentBookings, getMentorBookings,updateBookingStatus };
+const replyToStudentSession = async (req, res) => {
+  try {
+    const mentorId = req.mentor?.id;
+; // Ensure it's from protectMentor
+    const bookingId = req.params.bookingId;
+    const { reply } = req.body;
+
+    const booking = await MentorBooking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    console.log("Booking mentor ID:", booking.mentor);
+    console.log("Logged-in mentor ID:", mentorId);
+
+    if (booking.mentor.toString() !== mentorId) {
+      return res.status(403).json({ message: "Access denied. Not your booking." });
+    }
+
+    booking.reply = reply;
+    await booking.save();
+
+    res.json({ message: "Reply sent successfully", booking });
+  } catch (error) {
+    console.error("Error sending reply:", error);
+    res.status(500).json({ message: "Failed to send reply" });
+  }
+};
+
+
+const getAssignedBatches = async (req, res) => {
+  try {
+    const mentorId = req.mentor?.id;
+
+    const batches = await Batch.find({ mentor: mentorId }).populate("course", "title").populate("students", "name email");
+
+    res.json({ batches });
+  } catch (error) {
+    console.error("Error fetching mentor batches:", error);
+    res.status(500).json({ message: "Failed to fetch assigned batches" });
+  }
+};
+
+
+const getBatchById = async (req, res) => {
+  try {
+    const { batchId } = req.params;
+
+    const batch = await Batch.findById(batchId).populate("course students"); // populate course & students only
+
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
+
+    // Manually populate the mentor from User model
+    const mentor = batch.mentor ? await User.findById(batch.mentor) : null;
+
+    const populatedBatch = {
+      ...batch.toObject(),
+      mentor, // override mentor ObjectId with full mentor document
+    };
+
+    res.json({ batch: populatedBatch });
+  } catch (error) {
+    console.error("Error fetching batch:", error);
+    res.status(500).json({ message: "Failed to fetch batch" });
+  }
+};
+
+
+module.exports = {  bookMentorSession,getBatchById,getAssignedBatches, getStudentBookings, getMentorBookings,updateBookingStatus,replyToStudentSession };

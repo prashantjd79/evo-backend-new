@@ -19,7 +19,7 @@ const Otp = require("../models/Otp");
 const Certificate = require("../models/Certificate");
 const Batch = require("../models/Batch");
 const Job = require("../models/Job");
-
+const MentorBooking = require("../models/MentorBooking");
 
 
 // Generate JWT Token
@@ -646,17 +646,36 @@ const getLessonsByCourseForStudent = async (req, res) => {
       return res.status(403).json({ message: "You are not enrolled in this course." });
     }
 
-    // Fetch lessons
+    // Fetch lessons with quizzes & assignments
     const lessons = await Lesson.find({ course: courseId }).select(
-      "title content videoUrl resources"
+      "title content videoUrl resources quizzes assignments"
     );
 
-    res.json({ lessons });
+    // Remove answers from each quiz
+    const sanitizedLessons = lessons.map((lesson) => {
+      const sanitizedQuizzes = (lesson.quizzes || []).map((quiz) => {
+        const { question, options, _id } = quiz;
+        return { _id, question, options }; // No 'answer' key
+      });
+
+      return {
+        _id: lesson._id,
+        title: lesson.title,
+        content: lesson.content,
+        videoUrl: lesson.videoUrl,
+        resources: lesson.resources,
+        quizzes: sanitizedQuizzes,
+        assignments: lesson.assignments || [],
+      };
+    });
+
+    res.json({ lessons: sanitizedLessons });
   } catch (error) {
     console.error("Error fetching lessons:", error);
     res.status(500).json({ message: "Failed to fetch lessons" });
   }
 };
+
 const getMyBatches = async (req, res) => {
   const studentId = req.user._id;
 
@@ -673,4 +692,19 @@ const getMyBatches = async (req, res) => {
   }
 };
 
-module.exports = { signupStudent,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+const getMyMentorBookings = async (req, res) => {
+  const studentId = req.user._id;
+
+  try {
+    const bookings = await MentorBooking.find({ student: studentId })
+      .populate("mentor", "name email expertise") // You can add more mentor fields if needed
+      .sort({ createdAt: -1 });
+
+    res.json({ bookings });
+  } catch (error) {
+    console.error("Error fetching mentor sessions for student:", error);
+    res.status(500).json({ message: "Failed to fetch mentor sessions" });
+  }
+};
+
+module.exports = { signupStudent,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

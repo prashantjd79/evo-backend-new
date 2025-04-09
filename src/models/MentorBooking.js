@@ -6,7 +6,10 @@ const mentorBookingSchema = new mongoose.Schema({
   date: { type: Date, required: true }, 
   timeSlot: { type: String, required: true }, 
   status: { type: String, enum: ["Pending", "Confirmed", "Cancelled"], default: "Pending" },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+ // sessionDate: { type: Date, required: true },
+  messageFromStudent: { type: String },
+  replyFromMentor: { type: String },
 });
 
 const MentorBooking = mongoose.model("MentorBooking", mentorBookingSchema);

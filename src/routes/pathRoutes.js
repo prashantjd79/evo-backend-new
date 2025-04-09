@@ -1,5 +1,5 @@
 const express = require("express");
-const { createPath, assignWannaBeInterestToPath,getPaths } = require("../controllers/pathController");
+const { createPath, assignWannaBeInterestToPath,getPaths,deletePath,getPathById } = require("../controllers/pathController");
 const {adminProtect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/multer");
 const multer = require('multer');
@@ -26,4 +26,6 @@ router.put(
   adminProtect,
   assignWannaBeInterestToPath
 );
+router.delete("/:id",adminProtect, deletePath);
+router.get("/:id",adminProtect, getPathById);
 module.exports = router;
