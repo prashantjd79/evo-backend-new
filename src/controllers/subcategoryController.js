@@ -68,5 +68,20 @@ const getAllSubcategories = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const deleteSubcategory = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-module.exports = { createSubcategory, getAllSubcategories,getSubcategoriesByCategory };
+    const deleted = await Subcategory.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Subcategory not found" });
+    }
+
+    res.status(200).json({ message: "Subcategory deleted successfully", deleted });
+  } catch (error) {
+    console.error("Error deleting subcategory:", error);
+    res.status(500).json({ message: "Failed to delete subcategory" });
+  }
+};
+module.exports = { createSubcategory, getAllSubcategories,getSubcategoriesByCategory,deleteSubcategory };

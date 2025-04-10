@@ -89,18 +89,20 @@ const reviewJob = async (req, res) => {
   }
 };
 
-// Get All Jobs (Filtered by Status)
-const getAllJobs = async (req, res) => {
-  const { status } = req.query; // Optional status filter
-
+const getEmployerJobs = async (req, res) => {
   try {
-    let query = {};
-    if (status) query.status = status;
+    const employerId = req.employer?.id; // from protect middleware
 
-    const jobs = await Job.find(query).populate("employer", "name email");
-    res.json(jobs);
+    if (!employerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const jobs = await Job.find({ employer: employerId }).sort({ createdAt: -1 });
+
+    res.status(200).json({ jobs });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching employer jobs:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
   }
 };
 
@@ -248,4 +250,4 @@ const getStudentDetailsById = async (req, res) => {
 
   
 
-module.exports = { postJob,getStudentDetailsById, reviewJob, getAllJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };
+module.exports = { postJob,getStudentDetailsById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };

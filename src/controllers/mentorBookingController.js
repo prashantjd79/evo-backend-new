@@ -14,7 +14,7 @@ const Batch = require("../models/Batch");
 
 // Book a Mentor Session
 const bookMentorSession = async (req, res) => {
-  const { studentId, mentorId, date, timeSlot } = req.body;
+  const { studentId, mentorId, date, timeSlot, message } = req.body;
 
   try {
     const mentor = await User.findById(mentorId);
@@ -22,13 +22,23 @@ const bookMentorSession = async (req, res) => {
       return res.status(404).json({ message: "Mentor not found" });
     }
 
-    const booking = await MentorBooking.create({ student: studentId, mentor: mentorId, date, timeSlot });
+    const booking = await MentorBooking.create({
+      student: studentId,
+      mentor: mentorId,
+      date,
+      timeSlot,
+      message, // ✅ include message
+    });
 
-    res.status(201).json({ message: "Mentor session booked successfully", booking });
+    res.status(201).json({
+      message: "Mentor session booked successfully",
+      booking,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // View Student's Booked Sessions
 const getStudentBookings = async (req, res) => {
@@ -96,7 +106,7 @@ const replyToStudentSession = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Not your booking." });
     }
 
-    booking.reply = reply;
+    booking.replyFromMentor = reply;
     await booking.save();
 
     res.json({ message: "Reply sent successfully", booking });

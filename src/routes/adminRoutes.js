@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerAdmin, loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+const { registerAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
     getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
@@ -36,5 +36,5 @@ router.get("/Allcourses", getAllCourses);
 router.get("/allcat", getAllCategories);
 router.get("/allsubcat", getAllSubcategories);
 router.get("/allwanna", getAllWannaBeInterests);
-
+router.get("/me", adminProtect, getAdminProfile);
 module.exports = router;

@@ -11,7 +11,7 @@ router.get("/student/:studentId", protectMentor, getStudentBookings); // View st
 router.put("/update-status", protectMentor, updateBookingStatus); // Mentor updates booking status
 router.put("/reply-booking/:bookingId", protectMentor, replyToStudentSession);
 router.get("/my-batches", protectMentor, getAssignedBatches);
-router.get("/:batchId",protectMentor, getBatchById);
+router.get("batch/:batchId",protectMentor, getBatchById);
 
 router.get("/:mentorId", protectMentor, getMentorBookings); 
 module.exports = router;
