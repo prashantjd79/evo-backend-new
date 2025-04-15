@@ -1,5 +1,5 @@
 const express = require("express");
-const { signupStudent,getApprovedJobsForStudents,getMyMentorBookings,getMyBatches,getBatchById,loginStudent,verifyOtp,getLessonsByCourseForStudent,getMyCertificates,getAllCoursesForStudents,getMyEnrolledCourses,getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
+const { signupStudent,getStudentApplications,getApprovedJobsForStudents,getMyMentorBookings,getMyBatches,getBatchById,loginStudent,verifyOtp,getLessonsByCourseForStudent,getMyCertificates,getAllCoursesForStudents,getMyEnrolledCourses,getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
 const { studentProtect } = require("../middleware/authMiddleware");
 const uploadSubmittedAssignment = require("../middleware/uploadSubmittedAssignment");
 const uploadStudentPhoto = require("../middleware/uploadStudentPhoto");
@@ -27,9 +27,10 @@ router.post("/submit-quiz", studentProtect, submitQuiz);
 router.post("/apply-purchase", studentProtect, applyPromoCodeAndPurchase); 
 router.post("/course", studentProtect, enrollInCourse); // Student enrolls in a course
 router.post("/path", studentProtect, enrollInPath); // Student enrolls in a path
-router.get("/enrolled-courses", studentProtect, getEnrolledCourses);
+router.get("/enroll/enrolled-courses/", studentProtect, getEnrolledCourses);
 router.get("/enrolled-paths", studentProtect, getEnrolledPaths);
 router.get("/certificates", studentProtect, getMyCertificates);
 router.get("/jobs", studentProtect, getApprovedJobsForStudents);
 router.get("/my-mentor-sessions", studentProtect, getMyMentorBookings);
+router.get("/my-applications", studentProtect, getStudentApplications);
 module.exports = router;

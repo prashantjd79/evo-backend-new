@@ -15,52 +15,52 @@ const Course = require("../models/Course");
 const WannaBeInterest = require("../models/WannaBeInterest");
 const Subcategory = require("../models/Subcategory");
 const Category = require("../models/Category");
+const path = require("path");
+const Review = require("../models/Review");
 
-// Get Transactions (Filter by Course & Path)
+
 const getTransactions = async (req, res) => {
   const { courseId, pathId } = req.query;
 
   try {
-    let filter = {};
+    const filter = {};
     if (courseId) filter.course = courseId;
     if (pathId) filter.path = pathId;
 
     const transactions = await Transaction.find(filter)
       .populate("user", "name email")
-      .populate("course", "name")
-      .populate("path", "name");
+      .populate("course", "title")
+      .populate("path", "title");
 
     res.json(transactions);
   } catch (error) {
+    console.error("Error fetching transactions:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Export Transactions as CSV
 const exportTransactionsCSV = async (req, res) => {
-  const { courseId, pathId } = req.query;
+  const { courseId } = req.query;
 
   try {
     let filter = {};
     if (courseId) filter.course = courseId;
-    if (pathId) filter.path = pathId;
 
     const transactions = await Transaction.find(filter)
       .populate("user", "name email")
-      .populate("course", "name")
-      .populate("path", "name");
+      .populate("course", "title")
+      .populate("path", "title");
 
     if (transactions.length === 0) {
-      return res.status(404).json({ message: "No transactions found for the given filters." });
+      return res.status(404).json({ message: "No transactions found for the given course." });
     }
 
-    // Convert transactions to CSV format
     const fields = ["User", "Email", "Course", "Path", "Amount", "Payment Method", "Status", "Transaction Date"];
     const data = transactions.map(txn => ({
       User: txn.user?.name || "N/A",
       Email: txn.user?.email || "N/A",
-      Course: txn.course?.name || "N/A",
-      Path: txn.path?.name || "N/A",
+      Course: txn.course?.title || "N/A",
+      Path: txn.path?.title || "N/A",
       Amount: txn.amount,
       "Payment Method": txn.paymentMethod,
       Status: txn.status,
@@ -70,17 +70,26 @@ const exportTransactionsCSV = async (req, res) => {
     const parser = new Parser({ fields });
     const csv = parser.parse(data);
 
-    // Save CSV file
-    const filePath = `./exports/transactions_${Date.now()}.csv`;
+    // Ensure the 'exports' directory exists
+    const exportsDir = path.join(__dirname, "../../exports");
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir);
+    }
+
+    const filePath = path.join(exportsDir, `transactions_${Date.now()}.csv`);
     fs.writeFileSync(filePath, csv);
 
     res.download(filePath, "transactions.csv", () => {
-      fs.unlinkSync(filePath); // Delete file after download
+      fs.unlinkSync(filePath); // Clean up
     });
   } catch (error) {
+    console.error("CSV Export Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
 
 
@@ -455,34 +464,82 @@ const getAllCourses = async (req, res) => {
       .populate("category", "title")
       .populate("subcategory", "title")
       .populate("wannaBeInterest", "title")
-      .select("title photo realPrice discountedPrice createdBy");
+      .select("title photo realPrice discountedPrice createdBy category subcategory wannaBeInterest");
 
-    res.status(200).json({ courses });
+    console.log("Fetched raw courses:", courses.map(course => ({
+      id: course._id,
+      category: course.category,
+      subcategory: course.subcategory,
+      interest: course.wannaBeInterest
+    })));
+
+    const formatted = courses.map(course => ({
+      id: course._id,
+      title: course.title,
+      photo: course.photo,
+      realPrice: course.realPrice,
+      discountedPrice: course.discountedPrice,
+      createdBy: course.createdBy || "Admin",
+      category: course.category?.title || "N/A",
+      subcategory: course.subcategory?.title || "N/A",
+      interest: Array.isArray(course.wannaBeInterest) && course.wannaBeInterest.length > 0
+        ? course.wannaBeInterest.map(i => i.title).join(", ")
+        : "N/A"
+    }));
+
+    res.status(200).json({ courses: formatted });
   } catch (error) {
     console.error("Error fetching all courses:", error);
     res.status(500).json({ message: "Failed to fetch courses" });
   }
 };
 
+
+
+
 const getAllSubcategories = async (req, res) => {
   try {
-    const subcategories = await Subcategory.find().select("title description photo");
-    res.status(200).json({ subcategories });
+    const subcategories = await Subcategory.find()
+      .populate("wannaBeInterest", "title")
+      .select("title description photo category wannaBeInterest");
+
+    res.status(200).json({
+      subcategories: subcategories.map(s => ({
+        _id: s._id,
+        title: s.title,
+        description: s.description,
+        photo: s.photo,
+        wannaBe: s.wannaBeInterest?.title || "N/A"
+      }))
+    });
   } catch (error) {
     console.error("Error fetching subcategories:", error);
     res.status(500).json({ message: "Failed to fetch subcategories" });
   }
 };
 
+
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find().select("title description photo");
-    res.status(200).json({ categories });
+    const categories = await Category.find()
+      .populate("wannaBeInterest", "title")
+      .select("title description photo wannaBeInterest");
+
+    res.status(200).json({
+      categories: categories.map(c => ({
+        _id: c._id,
+        title: c.title,
+        description: c.description,
+        photo: c.photo,
+        wannaBe: c.wannaBeInterest?.title || "N/A"
+      }))
+    });
   } catch (error) {
     console.error("Error fetching categories:", error);
     res.status(500).json({ message: "Failed to fetch categories" });
   }
 };
+
 const getAllWannaBeInterests = async (req, res) => {
   try {
     const interests = await WannaBeInterest.find().select("title description image");
@@ -510,8 +567,32 @@ const getAdminProfile = async (req, res) => {
   }
 };
 
+const addReviewByAdmin = async (req, res) => {
+  try {
+    const { courseId, rating, comment } = req.body;
+    const adminId = req.admin.id; // assuming you use adminProtect middleware
 
-module.exports = { registerAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+    if (!adminId) {
+      return res.status(401).json({ message: "Unauthorized. Admin not found." });
+    }
+
+    const review = await Review.create({
+      course: courseId,
+      user: adminId,  // ✅ Set the admin ID here
+      rating,
+      comment,
+    });
+
+    res.status(201).json({ message: "Review submitted successfully", review });
+  } catch (error) {
+    console.error("Error creating review by admin:", error);
+    res.status(500).json({ message: "Failed to submit review" });
+  }
+};
+
+
+
+module.exports = { registerAdmin,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,
    getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};

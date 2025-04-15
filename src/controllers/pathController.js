@@ -154,23 +154,55 @@ const deletePath = async (req, res) => {
   }
 };
 
+
+
+
+
 const getPathById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const path = await Path.findById(id)
-      .populate("courses", "title _id") // populate course title and id
-      .populate("wannaBeInterest", "title _id"); // populate interest title and id
+      .populate({
+        path: "courses",
+        select: "title description", // optional: add photo, timing if needed
+      })
+      .populate({
+        path: "wannaBeInterest",
+        select: "title"
+      });
 
-    if (!path) {
-      return res.status(404).json({ message: "Path not found" });
-    }
+    if (!path) return res.status(404).json({ message: "Path not found" });
 
-    res.json({ path });
+    console.log("Fetched path raw data:", path);
+
+    res.status(200).json({
+      path: {
+        _id: path._id,
+        name: path.title,
+        description: path.description,
+        photo: path.photo,
+        timing: path.timing,
+        price: path.price,
+        courses: path.courses.map(course => ({
+          id: course._id,
+          title: course.title,
+          description: course.description
+        })),
+        wannaBeInterest: path.wannaBeInterest.map(i => i.title),
+        createdAt: path.createdAt,
+        updatedAt: path.updatedAt
+      }
+    });
   } catch (error) {
-    console.error("Error fetching path by ID:", error);
-    res.status(500).json({ message: "Failed to fetch path" });
+    console.error("Error in getPathById:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+
+
 
 module.exports = { createPath,deletePath, assignWannaBeInterestToPath ,getPaths,getPathById};

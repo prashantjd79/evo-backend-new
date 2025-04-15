@@ -106,27 +106,45 @@ const getEmployerJobs = async (req, res) => {
   }
 };
 
-// Students Apply for a Job
 const applyForJob = async (req, res) => {
   const { jobId, studentId } = req.body;
+  const resume = req.file ? `/uploads/resumes/${req.file.filename}` : null;
 
   try {
+    console.log("📄 Resume:", resume);
+    console.log("👤 Student ID:", studentId);
+
     const job = await Job.findById(jobId);
-    if (!job) return res.status(404).json({ message: "Job not found" });
 
-    // Initialize applicants array if undefined
-    if (!Array.isArray(job.applicants)) {
-      job.applicants = [];
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.applicants.includes(studentId)) {
-      job.applicants.push(studentId);
-      await job.save();
+    // 🧹 Clean malformed applicants if any
+    job.applicants = job.applicants?.filter(app => app.student) || [];
+
+    console.log("📋 Cleaned Applicants:", job.applicants);
+
+    const alreadyApplied = job.applicants.find(app =>
+      app.student.toString() === studentId
+    );
+
+    if (alreadyApplied) {
+      return res.status(400).json({ message: "Already applied to this job" });
     }
+
+    // ✅ Push the new valid applicant
+    job.applicants.push({
+      student: new mongoose.Types.ObjectId(studentId),
+      resume
+    });
+
+    await job.save();
 
     res.json({ message: "Application submitted successfully", job });
+
   } catch (error) {
-    console.error("Error applying for job:", error);
+    console.error("❌ Error applying for job:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -147,6 +165,29 @@ const getJobApplicants = async (req, res) => {
 };
 
 
+const updateApplicationStatus = async (req, res) => {
+  const { jobId, studentId, newStatus } = req.body;
+
+  if (!["Accepted", "Rejected", "Pending"].includes(newStatus)) {
+    return res.status(400).json({ message: "Invalid status value" });
+  }
+
+  try {
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    const applicant = job.applicants.find(app => app.student.toString() === studentId);
+    if (!applicant) return res.status(404).json({ message: "Student not found in applicants" });
+
+    applicant.status = newStatus;
+    await job.save();
+
+    res.json({ message: "Application status updated", applicant });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Failed to update status" });
+  }
+};
 
 
 
@@ -250,4 +291,4 @@ const getStudentDetailsById = async (req, res) => {
 
   
 
-module.exports = { postJob,getStudentDetailsById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };
+module.exports = { postJob,updateApplicationStatus,getStudentDetailsById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };

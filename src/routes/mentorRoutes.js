@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/signup", uploadMentorPhoto.single("photo"), registerMentor);
 
 router.post("/login", loginMentor);
-router.get("/submitted-assignments",adminProtect, protectMentor, getSubmittedAssignments);
+router.get("/submitted-assignments",protectMentor, getSubmittedAssignments);
 router.post("/grade-assignment", protectMentor, gradeAssignment);
 
 

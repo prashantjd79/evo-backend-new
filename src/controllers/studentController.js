@@ -9,7 +9,7 @@ const Lesson = require("../models/Lesson");
 const Course = require("../models/Course");
 const Path = require("../models/Path");
 const EvoScore = require("../models/EvoScore");
-const { updateEvoScore } = require("../utils/evoScoreUtils"); // ✅ Correct
+const { updateEvoScore } = require("../utils/evoScoreUtils"); 
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
@@ -172,23 +172,37 @@ const enrollInPath = async (req, res) => {
 
 const getEnrolledCourses = async (req, res) => {
   try {
-    // ✅ Ensure student is authenticated from token
-    if (!req.student || !req.student.id) {
+    // ✅ Use req.user instead of req.student
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: "Unauthorized: No student ID found in token" });
     }
 
-    // ✅ Fetch the authenticated student and populate courses
-    const student = await User.findById(req.student.id)
-      .populate("enrolledCourses.course", "name description") // Populate Course details
+    // ✅ Fetch the authenticated student and populate full course info
+    const student = await User.findById(req.user._id)
+      .populate({
+        path: "enrolledCourses.course",
+        select: "title description category subcategory",
+        populate: [
+          { path: "category", select: "title" },
+          { path: "subcategory", select: "title" },
+        ],
+      })
       .select("name email enrolledCourses");
 
     if (!student) return res.status(404).json({ message: "Student not found" });
 
+    console.log("Fetched student with enrolled courses:", student);
+
     res.json({ student });
   } catch (error) {
+    console.error("Error in getEnrolledCourses:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
 const getEnrolledPaths = async (req, res) => {
   try {
     // ✅ Ensure student is authenticated from token
@@ -707,4 +721,34 @@ const getMyMentorBookings = async (req, res) => {
   }
 };
 
-module.exports = { signupStudent,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+
+const getStudentApplications = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+
+    const jobs = await Job.find({ "applicants.student": studentId })
+      .select("title companyName location applicants")
+      .lean();
+
+    const applications = jobs.map(job => {
+      const applicant = job.applicants.find(app => app.student.toString() === studentId.toString());
+      return {
+        jobId: job._id,
+        title: job.title,
+        companyName: job.companyName,
+        location: job.location,
+        status: applicant.status,
+        resume: applicant.resume
+      };
+    });
+
+    res.json({ applications });
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    res.status(500).json({ message: "Failed to fetch applications" });
+  }
+};
+
+
+
+module.exports = { signupStudent,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

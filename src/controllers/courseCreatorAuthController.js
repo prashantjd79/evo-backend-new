@@ -83,39 +83,79 @@ const loginCourseCreator = async (req, res) => {
   
 
 
-  const createCourse = async (req, res) => {
-    const { name, description, categoryId, subcategoryId, wannaBeInterest } = req.body; 
-
+  const createCourseByCreator = async (req, res) => {
     try {
-        // Validate categoryId
-        const category = await Category.findById(categoryId);
-        if (!category) return res.status(404).json({ message: "Category not found" });
-
-        // Validate subcategoryId
-        const subcategory = await Subcategory.findById(subcategoryId);
-        if (!subcategory) return res.status(404).json({ message: "Subcategory not found" });
-
-        // ✅ Validate multiple WannaBeInterest IDs
-        const validWannaBeInterests = await WannaBeInterest.find({ _id: { $in: wannaBeInterest } });
-
-        if (validWannaBeInterests.length !== wannaBeInterest.length) {
-            return res.status(404).json({ message: "One or more WannaBeInterest IDs are invalid" });
-        }
-
-        // ✅ Create course
-        const course = await Course.create({
-            name,
-            description,
-            category: categoryId,
-            subcategory: subcategoryId,
-            wannaBeInterest, // ✅ Save multiple references
-        });
-
-        res.status(201).json({ message: "Course created successfully", course });
+      const {
+        title,
+        description,
+        whatYouWillLearn,
+        youtubeLink,
+        timing,
+        categoryId,
+        subcategoryId,
+        wannaBeInterestIds,
+        realPrice,
+        discountedPrice,
+        tags
+      } = req.body;
+  
+      // 👤 Ensure creator identity is set via middleware
+      const createdBy = req.user?.name || req.user?.email || "Course Creator";
+  
+      // 🧠 Parse comma-separated WannaBeInterest IDs
+      let parsedWannaBeInterestIds = [];
+      if (typeof wannaBeInterestIds === "string") {
+        parsedWannaBeInterestIds = wannaBeInterestIds.split(",").map(id => id.trim());
+      }
+  
+      // ✅ Validate category
+      const category = await Category.findById(categoryId);
+      if (!category) return res.status(404).json({ message: "Category not found" });
+  
+      // ✅ Validate subcategory
+      const subcategory = await Subcategory.findById(subcategoryId);
+      if (!subcategory) return res.status(404).json({ message: "Subcategory not found" });
+  
+      // ✅ Validate WannaBeInterest IDs
+      const validWannaBeInterests = await WannaBeInterest.find({
+        _id: { $in: parsedWannaBeInterestIds }
+      });
+  
+      if (validWannaBeInterests.length !== parsedWannaBeInterestIds.length) {
+        return res.status(400).json({ message: "Some WannaBeInterest IDs are invalid" });
+      }
+  
+      // ✅ Handle file upload for course photo
+      const photo = req.file ? `course/${req.file.filename}` : null;
+  
+      // ✅ Parse tags
+      const parsedTags = tags?.split(",").map(tag => tag.trim()) || [];
+  
+      // ✅ Create course
+      const course = await Course.create({
+        title,
+        description,
+        whatYouWillLearn,
+        youtubeLink,
+        timing,
+        category: categoryId,
+        subcategory: subcategoryId,
+        wannaBeInterest: parsedWannaBeInterestIds,
+        realPrice,
+        discountedPrice,
+        photo,
+        tags: parsedTags,
+        reviews: [],
+        createdBy // could be creator’s name/email
+      });
+  
+      res.status(201).json({ message: "Course created successfully", course });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+      console.error("Course creation by creator failed:", error);
+      res.status(500).json({ message: error.message });
     }
-};
+  };
+  
 
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
@@ -189,4 +229,4 @@ const deleteCourse = async (req, res) => {
 };
 
 
-module.exports = { registerCourseCreator, loginCourseCreator,createCourse,updateCourse,getAllCourses,deleteCourse };
+module.exports = { registerCourseCreator, loginCourseCreator,createCourseByCreator,updateCourse,getAllCourses,deleteCourse };

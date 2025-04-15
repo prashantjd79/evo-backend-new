@@ -27,5 +27,5 @@ router.put(
   assignWannaBeInterestToPath
 );
 router.delete("/:id",adminProtect, deletePath);
-router.get("/:id",adminProtect, getPathById);
+router.get("/:id", getPathById);
 module.exports = router;

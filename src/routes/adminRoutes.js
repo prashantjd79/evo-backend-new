@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+const { registerAdmin,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
     getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
@@ -24,7 +24,7 @@ router.get("/analytics", adminProtect, getPlatformAnalytics); // Get platform-wi
 router.put("/status", adminProtect, updateUserStatus); // Update user status (Active/Inactive/Banned)
 router.get("/courses", adminProtect, getCoursesWithDetails);
 router.get("/", adminProtect, getTransactions); // Get transactions (filtered by Course & Path)
-router.get("/export", adminProtect, exportTransactionsCSV); // Export transactions as CSV
+ // Export transactions as CSV
 router.put("/assign-mentors", adminProtect, assignMentorsToManager);
 router.get("/assignments", adminProtect, getAllSubmittedAssignments);
 router.get("/certificates", adminProtect, getAllCertificates);
@@ -37,4 +37,9 @@ router.get("/allcat", getAllCategories);
 router.get("/allsubcat", getAllSubcategories);
 router.get("/allwanna", getAllWannaBeInterests);
 router.get("/me", adminProtect, getAdminProfile);
+router.get("/transactions/export", adminProtect, exportTransactionsCSV);
+router.get("/transactions", adminProtect, getTransactions);
+router.post("/review", adminProtect, addReviewByAdmin);
+
+
 module.exports = router;

@@ -4,7 +4,11 @@ const categorySchema = new mongoose.Schema(
   {
     title: { type: String, required: true, unique: true },
     description: { type: String },
-    photo: { type: String }, // store filename or relative path like "category/icon123.png"
+    photo: { type: String },
+    wannaBeInterest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WannaBeInterest"
+    } // store filename or relative path like "category/icon123.png"
   },
   { timestamps: true }
 );

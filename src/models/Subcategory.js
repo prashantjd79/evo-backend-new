@@ -10,6 +10,10 @@ const subcategorySchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    wannaBeInterest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WannaBeInterest"
+    }
   },
   { timestamps: true }
 );
