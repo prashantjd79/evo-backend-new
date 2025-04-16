@@ -17,6 +17,7 @@ const Subcategory = require("../models/Subcategory");
 const Category = require("../models/Category");
 const path = require("path");
 const Review = require("../models/Review");
+const Lesson = require("../models/Lesson");
 
 
 const getTransactions = async (req, res) => {
@@ -590,9 +591,57 @@ const addReviewByAdmin = async (req, res) => {
   }
 };
 
+const getAllStudentsProgress = async (req, res) => {
+  try {
+    const students = await User.find({ role: "Student" }).populate({
+      path: "enrolledCourses.course",
+      model: "Course",
+      select: "title",
+    });
+
+    const allProgress = [];
+
+    for (const student of students) {
+      const studentReport = {
+        studentId: student._id,
+        name: student.name,
+        email: student.email,
+        courses: [],
+      };
+
+      for (const enrolled of student.enrolledCourses) {
+        if (!enrolled.course) continue; // ❌ Skip if course is not populated
+
+        const lessons = await Lesson.find({ course: enrolled.course._id });
+
+        const totalLessons = lessons.length;
+        const completed = enrolled.completedLessons?.length || 0;
+        const percent = totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0;
+
+        studentReport.courses.push({
+          courseId: enrolled.course._id,
+          title: enrolled.course.title,
+          totalLessons,
+          completedLessons: completed,
+          progressPercent: percent,
+          isCourseComplete: completed === totalLessons,
+        });
+      }
+
+      allProgress.push(studentReport);
+    }
+
+    res.json({ students: allProgress });
+  } catch (error) {
+    console.error("❌ Error in admin progress view:", error);
+    res.status(500).json({ message: "Failed to fetch student progress" });
+  }
+};
 
 
-module.exports = { registerAdmin,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+
+
+module.exports = { registerAdmin,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,
    getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};

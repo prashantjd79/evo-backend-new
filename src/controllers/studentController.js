@@ -22,6 +22,8 @@ const Job = require("../models/Job");
 const MentorBooking = require("../models/MentorBooking");
 
 
+
+
 // Generate JWT Token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -413,53 +415,58 @@ const applyPromoCodeAndPurchase = async (req, res) => {
 
 
 
+
+
+
 // const submitAssignment = async (req, res) => {
-//   const { lessonId, fileUrl } = req.body;
+//   const { lessonId, description } = req.body;
 //   const studentId = req.user._id;
 
 //   try {
-//     // ✅ Validate lesson
+//     if (!req.file) {
+//       return res.status(400).json({ message: "PDF file is required" });
+//     }
+
 //     const lesson = await Lesson.findById(lessonId);
-//     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+//     if (!lesson) {
+//       return res.status(404).json({ message: "Lesson not found" });
+//     }
 
-//     console.log("Lesson Data:", lesson); // 🔹 Debugging log
-
-//     // ✅ Ensure lesson has a courseId
 //     if (!lesson.course) {
-//       console.error("Error: Lesson does not have a courseId!");
 //       return res.status(500).json({ message: "Lesson does not have a valid courseId." });
 //     }
 
-//     // ✅ Check if student already submitted an assignment for this lesson
-//     const existingSubmission = await SubmittedAssignment.findOne({
-//       student: studentId,
-//       lesson: lessonId
-//     });
+//     const existing = await SubmittedAssignment.findOne({ student: studentId, lesson: lessonId });
 
-//     if (existingSubmission) {
-//       return res.status(400).json({ message: "You have already submitted an assignment for this lesson." });
+//     if (existing) {
+//       const filePath = path.join("uploads", "submitted", req.file.filename);
+//       if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Remove duplicate file
+//       return res.status(400).json({ message: "You already submitted this assignment." });
 //     }
 
-//     // ✅ Save assignment submission with `courseId`
 //     const submission = await SubmittedAssignment.create({
+//       _id: new mongoose.Types.ObjectId(),
 //       student: studentId,
 //       lesson: lessonId,
-//       course: lesson.course,  // ✅ Now `courseId` is explicitly stored
-//       fileUrl
+//       course: lesson.course,
+//       fileUrl: `submitted/${req.file.filename}`,
+//       description: description || "",
 //     });
 
-//     console.log("Assignment Submitted Successfully:", submission); // 🔹 Debugging log
-
-//     res.status(201).json({ 
-//       message: "Assignment submitted successfully. Awaiting grading.", 
-//       submission 
+//     res.status(201).json({
+//       message: "Assignment submitted successfully.",
+//       submission: {
+//         _id: submission._id,
+//         fileUrl: submission.fileUrl,
+//         description: submission.description,
+//         lessonId: submission.lesson,
+//         studentId: submission.student,
+//       },
 //     });
-
 //   } catch (error) {
 //     res.status(500).json({ message: error.message });
 //   }
 // };
-
 
 const submitAssignment = async (req, res) => {
   const { lessonId, description } = req.body;
@@ -480,10 +487,9 @@ const submitAssignment = async (req, res) => {
     }
 
     const existing = await SubmittedAssignment.findOne({ student: studentId, lesson: lessonId });
-
     if (existing) {
       const filePath = path.join("uploads", "submitted", req.file.filename);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Remove duplicate file
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       return res.status(400).json({ message: "You already submitted this assignment." });
     }
 
@@ -496,6 +502,26 @@ const submitAssignment = async (req, res) => {
       description: description || "",
     });
 
+    // ✅ Check if quiz is also submitted
+    const quizSubmitted = await SubmittedQuiz.findOne({
+      student: studentId,
+      lesson: lessonId
+    });
+
+    if (quizSubmitted) {
+      // ✅ Mark lesson as completed in user's enrolledCourses
+      const user = await User.findById(studentId);
+      const courseEntry = user.enrolledCourses.find(entry =>
+        entry.course.toString() === lesson.course.toString()
+      );
+
+      if (courseEntry && !courseEntry.completedLessons.includes(lessonId)) {
+        courseEntry.completedLessons.push(lessonId);
+        await user.save();
+        console.log(`✅ Marked lesson ${lessonId} as completed for student ${studentId}`);
+      }
+    }
+
     res.status(201).json({
       message: "Assignment submitted successfully.",
       submission: {
@@ -507,11 +533,10 @@ const submitAssignment = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error submitting assignment:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 const submitQuiz = async (req, res) => {
   const { lessonId, answers } = req.body;
@@ -749,6 +774,42 @@ const getStudentApplications = async (req, res) => {
   }
 };
 
+const getMyCourseProgress = async (req, res) => {
+  try {
+    const studentId = req.user._id;
 
+    // 🧠 Load student + their enrolled courses
+    const student = await User.findById(studentId).populate("enrolledCourses.course");
 
-module.exports = { signupStudent,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+    const progressReport = [];
+
+    for (const enrolled of student.enrolledCourses) {
+      const course = enrolled.course;
+
+      // 🧠 Find all lessons in this course
+      const lessons = await Lesson.find({ course: course._id });
+
+      const totalLessons = lessons.length;
+      const completedLessons = enrolled.completedLessons || [];
+
+      const progressPercent = Math.round((completedLessons.length / totalLessons) * 100);
+      const isCourseComplete = completedLessons.length === totalLessons;
+
+      progressReport.push({
+        courseId: course._id,
+        title: course.title,
+        totalLessons,
+        completedLessons: completedLessons.length,
+        progressPercent,
+        isCourseComplete
+      });
+    }
+
+    res.json({ progress: progressReport });
+  } catch (error) {
+    console.error("❌ Error fetching course progress:", error);
+    res.status(500).json({ message: "Failed to get progress" });
+  }
+};
+
+module.exports = { signupStudent,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

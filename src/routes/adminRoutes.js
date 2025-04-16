@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerAdmin,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+const { registerAdmin,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
     getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
@@ -13,7 +13,7 @@ router.post("/login", loginAdmin);
 router.put("/approve-user", adminProtect, approveUser);
 router.get("/pending-approvals", adminProtect, getPendingApprovals);
 router.get("/me", adminProtect, getMyAdminProfile);
-
+router.get("/admin/all-progress", adminProtect, getAllStudentsProgress);
 router.put("/approve", adminProtect, approveMentor);
 router.get("/pending", adminProtect, getPendingMentors);
 
