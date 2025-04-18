@@ -157,13 +157,21 @@ const courseCreatorProtect = (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+      console.log("🧾 Decoded Token:", decoded);
+
       if (decoded.role !== "Course Creator") {
         return res.status(403).json({ message: "Access denied. Course Creators only." });
       }
 
-      req.courseCreator = decoded; // ✅ Assign course creator details to req
+      if (!decoded._id) {
+        console.log("❌ Missing _id in token");
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      req.courseCreator = decoded;
       next();
     } catch (error) {
+      console.error("❌ JWT error:", error);
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {

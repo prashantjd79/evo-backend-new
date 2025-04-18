@@ -72,6 +72,11 @@ const generateToken = (id, role) => {
       const manager = await User.findOne({ email, role: "Manager" });
       if (!manager) return res.status(400).json({ message: "Manager not found" });
   
+      if (manager.banned) {
+        return res.status(403).json({ message: "Your account has been banned by the admin." });
+      }
+      
+
       if (!manager.isApproved) return res.status(403).json({ message: "Your account is pending approval by admin." });
   
       const isMatch = await bcrypt.compare(password, manager.password);

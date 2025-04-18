@@ -162,11 +162,13 @@
 
 
 
-
-
 const Review = require("../models/Review");
 const User = require("../models/User");
 const Course = require("../models/Course");
+
+
+
+const mongoose = require("mongoose");
 
 const createReview = async (req, res) => {
   const { courseId, rating, comment } = req.body;
@@ -177,14 +179,16 @@ const createReview = async (req, res) => {
   }
 
   try {
-    const courseExists = await Course.findById(courseId);
+    const objectId = new mongoose.Types.ObjectId(courseId); // ✅ FIXED
+
+    const courseExists = await Course.findById(objectId);
     if (!courseExists) {
       return res.status(404).json({ message: "Course not found." });
     }
 
     const student = await User.findById(userId);
-    const enrolled = student.enrolledCourses.some((enrollment) =>
-      enrollment.course.toString() === courseId
+    const enrolled = student.enrolledCourses.some(
+      (enrollment) => enrollment.course.toString() === courseId
     );
 
     if (!enrolled) {
@@ -194,7 +198,7 @@ const createReview = async (req, res) => {
     }
 
     const newReview = await Review.create({
-      course: courseId,
+      course: objectId,
       user: userId,
       rating,
       comment,
@@ -206,8 +210,11 @@ const createReview = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("❌ Review creation failed:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 module.exports = { createReview };

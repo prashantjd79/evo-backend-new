@@ -65,6 +65,11 @@ const loginStudent = async (req, res) => {
     const student = await User.findOne({ email, role: "Student" });
     if (!student) return res.status(404).json({ message: "Student not found" });
 
+    if (student.banned) {
+      return res.status(403).json({ message: "Your account has been banned by the admin." });
+    }
+    
+
     if (!student.isVerified) {
       return res.status(403).json({ message: "Email not verified. Please verify first." });
     }
@@ -812,4 +817,39 @@ const getMyCourseProgress = async (req, res) => {
   }
 };
 
-module.exports = { signupStudent,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+
+
+const getStudentLessonScores = async (req, res) => {
+  try {
+    const studentId = req.user._id; // ✅ From studentProtect
+    const lessonId = req.params.lessonId;
+
+    console.log("🎓 Student ID:", studentId.toString());
+    console.log("📘 Lesson ID:", lessonId);
+
+    const assignment = await SubmittedAssignment.findOne({
+      student: studentId,
+      lesson: lessonId,
+    }).lean();
+
+    const quiz = await SubmittedQuiz.findOne({
+      student: studentId,
+      lesson: lessonId,
+    }).lean();
+
+    const response = {
+      lessonId,
+      studentId,
+      assignmentScore: assignment?.score || 0,
+      quizScore: quiz?.score || 0,
+    };
+
+    console.log("📤 Final lesson score response:", response);
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("❌ Error in getStudentLessonScores:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { signupStudent,getStudentLessonScores,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

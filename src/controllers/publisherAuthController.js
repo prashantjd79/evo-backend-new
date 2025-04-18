@@ -59,6 +59,11 @@ const loginPublisher = async (req, res) => {
       const publisher = await User.findOne({ email, role: "Publisher" });
       if (!publisher) return res.status(400).json({ message: "Publisher not found" });
   
+      if (publisher.banned) {
+        return res.status(403).json({ message: "Your account has been banned by the admin." });
+      }
+      
+
       if (!publisher.isApproved) return res.status(403).json({ message: "Your account is pending approval by admin." });
   
       const isMatch = await bcrypt.compare(password, publisher.password);

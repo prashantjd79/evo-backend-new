@@ -105,6 +105,11 @@ const loginMentor = async (req, res) => {
     const mentor = await User.findOne({ email, role: "Mentor" });
     if (!mentor) return res.status(404).json({ message: "Mentor not found" });
 
+    if (mentor.banned) {
+      return res.status(403).json({ message: "Your account has been banned by the admin." });
+    }
+    
+
     // Check password
     const isMatch = await bcrypt.compare(password, mentor.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });

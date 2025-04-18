@@ -1,5 +1,5 @@
 const express = require("express");
-const { createCourse,getAllCourses,getCourseById,assignWannaBeInterestToCourse } = require("../controllers/courseController");
+const { createCourse,updateCourseByAdmin,getAllCourses,getCourseById,assignWannaBeInterestToCourse } = require("../controllers/courseController");
 const { adminProtect } = require("../middleware/authMiddleware");
 const multer = require('multer');
 const upload = require("../middleware/multer");
@@ -26,4 +26,5 @@ const setCourseUploadType = (req, res, next) => {
 router.get("/", adminProtect, getAllCourses);
 router.get("/:id", adminProtect, getCourseById);
 router.put("/assign-wanna-be-interest", adminProtect, assignWannaBeInterestToCourse);
+router.put("/course/update/:id", adminProtect, upload.single("photo"), updateCourseByAdmin);
 module.exports = router;

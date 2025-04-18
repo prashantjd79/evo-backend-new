@@ -18,6 +18,81 @@ const Category = require("../models/Category");
 const path = require("path");
 const Review = require("../models/Review");
 const Lesson = require("../models/Lesson");
+const PromoCode = require("../models/PromoCode");
+const Ticket=require("../models/Ticket");
+const Announcement=require("../models/Announcement");
+
+const deleteCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    await course.deleteOne();
+    res.status(200).json({ message: "Course deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting course:", error);
+    res.status(500).json({ message: "Failed to delete course" });
+  }
+};
+
+const deletePromoCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const promo = await PromoCode.findById(id);
+    if (!promo) return res.status(404).json({ message: "Promo Code not found" });
+
+    await promo.deleteOne();
+    res.status(200).json({ message: "Promo Code deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting promo code:", error);
+    res.status(500).json({ message: "Failed to delete promo code" });
+  }
+};
+
+
+const deleteTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ticket = await Ticket.findById(id);
+    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+    await ticket.deleteOne();
+    res.status(200).json({ message: "Ticket deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting ticket:", error);
+    res.status(500).json({ message: "Failed to delete ticket" });
+  }
+};
+
+const deleteAnnouncement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const announcement = await Announcement.findById(id);
+    if (!announcement) return res.status(404).json({ message: "Announcement not found" });
+
+    await announcement.deleteOne();
+    res.status(200).json({ message: "Announcement deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting announcement:", error);
+    res.status(500).json({ message: "Failed to delete announcement" });
+  }
+};
+
+
+const deleteBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const batch = await Batch.findById(id);
+    if (!batch) return res.status(404).json({ message: "Batch not found" });
+
+    await batch.deleteOne();
+    res.status(200).json({ message: "Batch deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting batch:", error);
+    res.status(500).json({ message: "Failed to delete batch" });
+  }
+};
 
 
 const getTransactions = async (req, res) => {
@@ -638,10 +713,190 @@ const getAllStudentsProgress = async (req, res) => {
   }
 };
 
+const getAssignmentByLessonId = async (req, res) => {
+  const { lessonId } = req.params;
+
+  try {
+    const lesson = await Lesson.findById(lessonId);
+
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    if (!lesson.assignments || lesson.assignments.length === 0) {
+      return res.status(404).json({ message: "No assignment found in this lesson" });
+    }
+
+    res.json({ assignments: lesson.assignments });
+  } catch (error) {
+    console.error("❌ Error fetching lesson assignment:", error);
+    res.status(500).json({ message: "Failed to fetch assignment" });
+  }
+};
+const getBatchStudents = async (req, res) => {
+  const { batchId } = req.params;
+
+  try {
+    const batch = await Batch.findById(batchId).populate("students", "name email role status");
+
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
+
+    res.json({
+      batchName: batch.name,
+      studentCount: batch.students.length,
+      students: batch.students,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching batch students:", error);
+    res.status(500).json({ message: "Failed to fetch batch students" });
+  }
+};
+
+
+const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate("user", "name email")        // ✅ Show reviewer info
+      .populate("course", "title")           // ✅ Show course title
+      .sort({ createdAt: -1 });              // 🔽 Newest first
+
+    res.status(200).json({ reviews });
+  } catch (error) {
+    console.error("❌ Failed to fetch reviews:", error);
+    res.status(500).json({ message: "Failed to fetch reviews" });
+  }
+};
+
+
+const getUserProfileById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      photo: user.photo ? `${process.env.BASE_URL}/uploads/profile/${user.photo}` : null,
+      isVerified: user.isVerified,
+      status: user.status,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching user profile:", error);
+    res.status(500).json({ message: "Failed to fetch user profile" });
+  }
+};
+const toggleUserBanStatus = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { banned } = req.body; // expect true or false
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.banned = banned;
+    await user.save();
+
+    res.status(200).json({
+      message: `User has been ${banned ? "banned" : "unbanned"}`,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        banned: user.banned,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error banning/unbanning user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+const createTransaction = async (req, res) => {
+  try {
+    const { userId, courseId } = req.body;
+
+    if (!userId || !courseId) {
+      return res.status(400).json({ message: "userId and courseId are required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const existingTxn = await Transaction.findOne({
+      user: userId,
+      course: courseId,
+      status: { $in: ["Pending", "Paid"] },
+    });
+
+    if (existingTxn) {
+      return res.status(400).json({ message: "Transaction already exists for this course" });
+    }
+
+    const txn = await Transaction.create({
+      user: userId,
+      course: course._id,
+      amount: course.discountedPrice || course.realPrice,
+      status: "Pending",
+    });
+
+    res.status(201).json({
+      message: "Transaction initiated successfully",
+      transaction: txn,
+    });
+  } catch (error) {
+    console.error("❌ Error creating transaction:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+// controllers/adminController.js
 
 
 
-module.exports = { registerAdmin,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+const markTransactionAsPaid = async (req, res) => {
+  try {
+    const transactionId = req.params.id;
+
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if (transaction.status === "Paid") {
+      return res.status(400).json({ message: "Transaction is already marked as paid" });
+    }
+
+    transaction.status = "Paid";
+    await transaction.save();
+
+    res.status(200).json({
+      message: "Transaction marked as paid successfully",
+      transaction,
+    });
+  } catch (error) {
+    console.error("❌ Error marking transaction as paid:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+module.exports = { registerAdmin,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
-   getUsersByRole, getPlatformAnalytics, updateUserStatus,
+   getUsersByRole, getPlatformAnalytics, updateUserStatus,createTransaction,
    getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};

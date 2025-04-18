@@ -67,7 +67,11 @@ const userSchema = new mongoose.Schema({
 
   isApproved: { type: Boolean, default: false },
   status: { type: String, enum: ["Active", "Inactive", "Banned"], default: "Active" },
-
+  banned: {
+    type: Boolean,
+    default: false,
+  },
+  
   // ✅ Manager-specific
   assignedMentors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
@@ -80,6 +84,7 @@ const userSchema = new mongoose.Schema({
     }
   },
 
+  
   dob: { type: Date },
   contactNumber: { type: String },
   photo: { type: String }, // e.g. uploads/students/avatar.png

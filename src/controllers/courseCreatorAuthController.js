@@ -6,9 +6,10 @@ const Category = require("../models/Category");
 const Subcategory = require("../models/Subcategory");
 const WannaBeInterest = require("../models/WannaBeInterest");
 // Generate JWT Token
-const generateToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
-  };
+const generateToken = (_id, role, email) => {
+  return jwt.sign({ _id, role, email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
   
 
   const registerCourseCreator = async (req, res) => {
@@ -57,30 +58,46 @@ const generateToken = (id, role) => {
   
   
 
-const loginCourseCreator = async (req, res) => {
+  const loginCourseCreator = async (req, res) => {
     const { email, password } = req.body;
   
     try {
       const courseCreator = await User.findOne({ email, role: "Course Creator" });
-      if (!courseCreator) return res.status(400).json({ message: "Course Creator not found" });
-  
-      if (!courseCreator.isApproved) return res.status(403).json({ message: "Your account is pending approval by admin." });
+      if (!courseCreator) {
+        return res.status(400).json({ message: "Course Creator not found" });
+      }
+      if (courseCreator.banned) {
+        return res.status(403).json({ message: "Your account has been banned by the admin." });
+      }
+      if (!courseCreator.isApproved) {
+        return res.status(403).json({ message: "Your account is pending approval by admin." });
+      }
   
       const isMatch = await bcrypt.compare(password, courseCreator.password);
-      if (!isMatch) return res.status(401).json({ message: "Invalid email or password" });
+      if (!isMatch) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+  
+      const token = generateToken(courseCreator._id, courseCreator.role, courseCreator.email);
+  
+      console.log("✅ Token Payload:", {
+        _id: courseCreator._id.toString(),
+        role: courseCreator.role,
+        email: courseCreator.email,
+      });
   
       res.json({
-        _id: courseCreator.id,
+        _id: courseCreator._id,
         name: courseCreator.name,
         email: courseCreator.email,
         role: courseCreator.role,
-        token: generateToken(courseCreator.id, courseCreator.role), // ✅ Role included
+        token,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("❌ Login error:", error);
+      res.status(500).json({ message: "Server error" });
     }
   };
-  
 
 
   const createCourseByCreator = async (req, res) => {
@@ -157,49 +174,113 @@ const loginCourseCreator = async (req, res) => {
   };
   
 
-const updateCourse = async (req, res) => {
-  const { courseId } = req.params;
-  const { name, description, categoryId, subcategoryId, wannaBeInterest } = req.body;
 
-  try {
-      // Check if course exists
+
+
+
+  // const updateCourseByCreator = async (req, res) => {
+  //   try {
+  //     const creatorId = req.courseCreator?._id;
+  //     const courseId = req.params.id;
+  
+  //     console.log("🛠️ Incoming course update request...");
+  //     console.log("🔑 Creator ID from token:", creatorId);
+  //     console.log("📦 Course ID from params:", courseId);
+  
+  //     const course = await Course.findById(courseId);
+  
+  //     if (!course) {
+  //       console.log("❌ Course not found in database.");
+  //       return res.status(404).json({ message: "Course not found" });
+  //     }
+  
+  //     console.log("📘 Course found:", course.title);
+  //     console.log("📘 Course originally createdBy:", course.createdBy.toString());
+  
+  //     // ✅ Ownership check removed
+  //     console.log("🔓 Bypassing creator check — any course creator can update.");
+  
+  //     const updatedCourse = await Course.findByIdAndUpdate(
+  //       courseId,
+  //       {
+  //         title: req.body.title,
+  //         description: req.body.description,
+  //         whatYouWillLearn: req.body.whatYouWillLearn,
+  //         youtubeLink: req.body.youtubeLink,
+  //         timing: req.body.timing,
+  //         categoryId: req.body.categoryId,
+  //         subcategoryId: req.body.subcategoryId,
+  //         wannaBeInterestIds: req.body.wannaBeInterestIds,
+  //         realPrice: req.body.realPrice,
+  //         discountedPrice: req.body.discountedPrice,
+  //         tags: req.body.tags,
+  //         photo: req.body.photo,
+  //         review: req.body.review,
+  //       },
+  //       { new: true }
+  //     );
+  
+  //     console.log("✅ Course updated successfully.");
+  
+  //     res.status(200).json({
+  //       message: "Course updated by Course Creator",
+  //       course: updatedCourse,
+  //     });
+  //   } catch (error) {
+  //     console.error("❌ Error in updateCourseByCreator:", error);
+  //     res.status(500).json({ message: "Internal server error" });
+  //   }
+  // };
+
+
+
+  const updateCourseByCreator = async (req, res) => {
+    try {
+      const courseId = req.params.id;
+  
       const course = await Course.findById(courseId);
       if (!course) return res.status(404).json({ message: "Course not found" });
-
-      // Validate category if updated
-      if (categoryId) {
-          const category = await Category.findById(categoryId);
-          if (!category) return res.status(404).json({ message: "Category not found" });
+  
+      const updatedData = {
+        title: req.body.title,
+        description: req.body.description,
+        whatYouWillLearn: req.body["whatYouWillLearn[]"] || req.body.whatYouWillLearn,
+        youtubeLink: req.body.youtubeLink,
+        timing: req.body.timing,
+        categoryId: req.body.categoryId,
+        subcategoryId: req.body.subcategoryId,
+        wannaBeInterestIds: req.body["wannaBeInterestIds[]"] || req.body.wannaBeInterestIds,
+        realPrice: req.body.realPrice,
+        discountedPrice: req.body.discountedPrice,
+        tags: req.body["tags[]"] || req.body.tags,
+        review: req.body.review,
+      };
+  
+      // Handle photo (if using multer)
+      if (req.file) {
+        updatedData.photo = req.file.path;
       }
-
-      // Validate subcategory if updated
-      if (subcategoryId) {
-          const subcategory = await Subcategory.findById(subcategoryId);
-          if (!subcategory) return res.status(404).json({ message: "Subcategory not found" });
-      }
-
-      // Validate WannaBeInterest if updated
-      if (wannaBeInterest) {
-          const validWannaBeInterests = await WannaBeInterest.find({ _id: { $in: wannaBeInterest } });
-          if (validWannaBeInterests.length !== wannaBeInterest.length) {
-              return res.status(404).json({ message: "One or more WannaBeInterest IDs are invalid" });
-          }
-      }
-
-      // Update course details
-      course.name = name || course.name;
-      course.description = description || course.description;
-      course.category = categoryId || course.category;
-      course.subcategory = subcategoryId || course.subcategory;
-      course.wannaBeInterest = wannaBeInterest || course.wannaBeInterest;
-
-      await course.save();
-
-      res.json({ message: "Course updated successfully", course });
-  } catch (error) {
-      res.status(500).json({ message: error.message });
-  }
-};
+  
+      const updatedCourse = await Course.findByIdAndUpdate(courseId, updatedData, { new: true });
+  
+      res.status(200).json({
+        message: "Course updated by Course Creator",
+        course: updatedCourse,
+      });
+    } catch (error) {
+      console.error("❌ Error in updateCourseByCreator:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+  
+  
+  
+  
+  
+ 
+  
+  
 
 const getAllCourses = async (req, res) => {
   try {
@@ -229,4 +310,4 @@ const deleteCourse = async (req, res) => {
 };
 
 
-module.exports = { registerCourseCreator, loginCourseCreator,createCourseByCreator,updateCourse,getAllCourses,deleteCourse };
+module.exports = { registerCourseCreator,loginCourseCreator,createCourseByCreator,updateCourseByCreator,getAllCourses,deleteCourse };

@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const blogSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
-  category_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category", // Make sure this matches your actual Category model name
-    required: true
-  },
+  // category_id: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "Category", // Make sure this matches your actual Category model name
+  //   required: true
+  // },
   
   tags: [{ type: String }],
   image: { type: String }, // e.g. "uploads/blogs/xyz.jpg"

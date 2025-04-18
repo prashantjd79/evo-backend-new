@@ -186,4 +186,71 @@ const getCourseById = async (req, res) => {
   }
 };
 
-module.exports = { createCourse, getCourseById,getAllCourses ,assignWannaBeInterestToCourse};
+
+
+const updateCourseByAdmin = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const {
+      title,
+      description,
+      whatYouWillLearn,
+      youtubeLink,
+      timing,
+      categoryId,
+      subcategoryId,
+      wannaBeInterestIds,
+      realPrice,
+      discountedPrice,
+      tags,
+      createdBy,
+      review
+    } = req.body;
+
+    const parsedTags = tags?.split(",").map(tag => tag.trim()) || [];
+    const parsedWannaBeInterestIds = wannaBeInterestIds?.split(",").map(id => id.trim()) || [];
+
+    // Validate inputs
+    const category = await Category.findById(categoryId);
+    const subcategory = await Subcategory.findById(subcategoryId);
+    const validWannaBe = await WannaBeInterest.find({ _id: { $in: parsedWannaBeInterestIds } });
+
+    if (!category || !subcategory || validWannaBe.length !== parsedWannaBeInterestIds.length) {
+      return res.status(400).json({ message: "Invalid Category/Subcategory/WannaBeInterest" });
+    }
+
+    const photo = req.file ? `course/${req.file.filename}` : undefined;
+
+    const updatedFields = {
+      title, description, whatYouWillLearn, youtubeLink, timing,
+      category: categoryId,
+      subcategory: subcategoryId,
+      wannaBeInterest: parsedWannaBeInterestIds,
+      realPrice, discountedPrice,
+      tags: parsedTags,
+      createdBy,
+    };
+
+    if (photo) updatedFields.photo = photo;
+    if (review) {
+      updatedFields.reviews = [{
+        student: null,
+        rating: 5,
+        comment: review,
+        createdAt: new Date()
+      }];
+    }
+
+    const course = await Course.findByIdAndUpdate(courseId, updatedFields, { new: true });
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    res.json({ message: "Course updated by Admin", course });
+
+  } catch (error) {
+    console.error("❌ Admin update failed:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = { createCourse,updateCourseByAdmin,getCourseById,getAllCourses ,assignWannaBeInterestToCourse};

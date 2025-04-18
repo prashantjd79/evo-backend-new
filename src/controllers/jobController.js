@@ -3,7 +3,7 @@ const User = require("../models/User");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const EvoScore = require("../models/EvoScore");
 
 
 
@@ -240,6 +240,11 @@ const loginEmployer = async (req, res) => {
     const employer = await User.findOne({ email, role: "Employer" });
     if (!employer) return res.status(404).json({ message: "Employer not found" });
 
+    if (employer.banned) {
+      return res.status(403).json({ message: "Your account has been banned by the admin." });
+    }
+    
+
     // Check password
     const isMatch = await bcrypt.compare(password, employer.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
@@ -268,27 +273,117 @@ const loginEmployer = async (req, res) => {
   }
 };
 
-
-
-
-
-const getStudentDetailsById = async (req, res) => {
+const getStudentById = async (req, res) => {
   try {
     const studentId = req.params.id;
+    console.log("🔍 Fetching student by ID:", studentId);
 
-    const student = await User.findById(studentId).select("-password");
-
-    if (!student || student.role !== "Student") {
+    // Fetch student
+    const student = await User.findOne({ _id: studentId, role: "Student" }).lean();
+    if (!student) {
+      console.log("❌ Student not found in User collection");
       return res.status(404).json({ message: "Student not found" });
     }
+    console.log("✅ Student found:", student.name);
 
-    res.json({ student });
+    // Fetch evoscore entry
+    const evoScoreEntry = await EvoScore.findOne({ student: studentId }).lean();
+    if (!evoScoreEntry) {
+      console.log("⚠️ No EvoScore entry found for student.");
+    } else {
+      console.log("📊 EvoScore data:", evoScoreEntry);
+    }
+
+    // Extract values using correct casing
+    const evoscore = evoScoreEntry?.evoScore || 0;
+    const assignmentScore = evoScoreEntry?.assignmentScore || 0;
+    const quizScore = evoScoreEntry?.quizScore || 0;
+
+    // Construct clean response object
+    const responsePayload = {
+      _id: student._id,
+      name: student.name,
+      email: student.email,
+      evoscore,
+      assignmentScore,
+      quizScore,
+      testKey: "I am visible in Postman ✅"
+    };
+
+    console.log("📤 Response sent to Postman:", responsePayload);
+
+    // Ensure proper headers and response
+    res.setHeader("Content-Type", "application/json");
+    res.status(200).json(responsePayload);
   } catch (error) {
-    console.error("Error fetching student details:", error);
-    res.status(500).json({ message: "Failed to fetch student details" });
+    console.error("❌ Error in getStudentById:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-  
 
-module.exports = { postJob,updateApplicationStatus,getStudentDetailsById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };
+const updateJobByEmployer = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const employerId = req.employer._id; // from employerProtect middleware
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.employer.toString() !== employerId.toString()) {
+      return res.status(403).json({ message: "Unauthorized: You do not own this job" });
+    }
+
+    const updatedFields = {
+      title: req.body.title,
+      description: req.body.description,
+      companyName: req.body.companyName,
+      location: req.body.location,
+      jobType: req.body.jobType,
+      experienceRequired: req.body.experienceRequired,
+      salary: req.body.salary,
+      applicationDeadline: req.body.applicationDeadline,
+      openings: req.body.openings,
+      skillsRequired: Array.isArray(req.body.skillsRequired)
+        ? req.body.skillsRequired
+        : req.body.skillsRequired?.split(",").map(skill => skill.trim()),
+    };
+
+    const updatedJob = await Job.findByIdAndUpdate(jobId, updatedFields, { new: true });
+
+    res.status(200).json({
+      message: "Job updated successfully",
+      job: updatedJob,
+    });
+  } catch (error) {
+    console.error("❌ Error updating job:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const deleteJobByEmployer = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const employerId = req.employer._id;
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.employer.toString() !== employerId.toString()) {
+      return res.status(403).json({ message: "Unauthorized: You do not own this job" });
+    }
+
+    await Job.findByIdAndDelete(jobId);
+
+    res.status(200).json({ message: "Job deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting job:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { postJob,updateApplicationStatus,updateJobByEmployer,deleteJobByEmployer,getStudentById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };

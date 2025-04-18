@@ -165,16 +165,18 @@ const getPathById = async (req, res) => {
     const path = await Path.findById(id)
       .populate({
         path: "courses",
-        select: "title description", // optional: add photo, timing if needed
+        select: "title description", // Include other fields if needed
       })
       .populate({
         path: "wannaBeInterest",
-        select: "title"
+        select: "title",
       });
 
-    if (!path) return res.status(404).json({ message: "Path not found" });
+    if (!path) {
+      return res.status(404).json({ message: "Path not found" });
+    }
 
-    console.log("Fetched path raw data:", path);
+    console.log("✅ Fetched path data:", path);
 
     res.status(200).json({
       path: {
@@ -187,15 +189,15 @@ const getPathById = async (req, res) => {
         courses: path.courses.map(course => ({
           id: course._id,
           title: course.title,
-          description: course.description
+          description: course.description,
         })),
         wannaBeInterest: path.wannaBeInterest.map(i => i.title),
         createdAt: path.createdAt,
-        updatedAt: path.updatedAt
-      }
+        updatedAt: path.updatedAt,
+      },
     });
   } catch (error) {
-    console.error("Error in getPathById:", error);
+    console.error("❌ Error in getPathById:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

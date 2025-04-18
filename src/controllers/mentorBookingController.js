@@ -2,6 +2,34 @@ const MentorBooking = require("../models/MentorBooking");
 const User = require("../models/User");
 const Batch = require("../models/Batch");
 
+
+
+
+const deleteSession = async (req, res) => {
+  const sessionId = req.params.id;
+
+  try {
+    const session = await MentorBooking.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // ✅ Use `req.mentor.id` instead of `req.mentor._id`
+    if (session.mentor.toString() !== req.mentor.id) {
+      return res.status(403).json({ message: "Unauthorized to delete this session" });
+    }
+
+    await session.deleteOne();
+    res.status(200).json({ message: "Session deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting session:", error);
+    res.status(500).json({ message: "Failed to delete session" });
+  }
+};
+
+
+
 // // View Available Mentors
 // const getAvailableMentors = async (req, res) => {
 //   try {
@@ -157,4 +185,4 @@ const getBatchById = async (req, res) => {
 };
 
 
-module.exports = {  bookMentorSession,getBatchById,getAssignedBatches, getStudentBookings, getMentorBookings,updateBookingStatus,replyToStudentSession };
+module.exports = {  bookMentorSession,deleteSession,getBatchById,getAssignedBatches, getStudentBookings, getMentorBookings,updateBookingStatus,replyToStudentSession };

@@ -1,5 +1,5 @@
 const express = require("express");
-const { signupStudent,getMyCourseProgress,getStudentApplications,getApprovedJobsForStudents,getMyMentorBookings,getMyBatches,getBatchById,loginStudent,verifyOtp,getLessonsByCourseForStudent,getMyCertificates,getAllCoursesForStudents,getMyEnrolledCourses,getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
+const { signupStudent,getMyCourseProgress,getStudentLessonScores,getStudentApplications,getApprovedJobsForStudents,getMyMentorBookings,getMyBatches,getBatchById,loginStudent,verifyOtp,getLessonsByCourseForStudent,getMyCertificates,getAllCoursesForStudents,getMyEnrolledCourses,getStudentProfile,applyPromoCode,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses,getEnrolledPaths} = require("../controllers/studentController");
 const { studentProtect } = require("../middleware/authMiddleware");
 const uploadSubmittedAssignment = require("../middleware/uploadSubmittedAssignment");
 const uploadStudentPhoto = require("../middleware/uploadStudentPhoto");
@@ -34,4 +34,5 @@ router.get("/jobs", studentProtect, getApprovedJobsForStudents);
 router.get("/my-mentor-sessions", studentProtect, getMyMentorBookings);
 router.get("/my-applications", studentProtect, getStudentApplications);
 router.get("/my-progress", studentProtect, getMyCourseProgress);
+router.get("/scores/:lessonId", studentProtect, getStudentLessonScores);
 module.exports = router;

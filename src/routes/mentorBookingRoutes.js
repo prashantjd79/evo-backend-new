@@ -1,5 +1,5 @@
 const express = require("express");
-const {  bookMentorSession,getBatchById,replyToStudentSession,getAssignedBatches, getStudentBookings, updateBookingStatus,getMentorBookings } = require("../controllers/mentorBookingController");
+const {  bookMentorSession,deleteSession,getBatchById,replyToStudentSession,getAssignedBatches, getStudentBookings, updateBookingStatus,getMentorBookings } = require("../controllers/mentorBookingController");
 const {  studentProtect, protectMentor } = require("../middleware/authMiddleware");
 const MentorBooking = require("../models/MentorBooking");
 
@@ -12,6 +12,7 @@ router.put("/update-status", protectMentor, updateBookingStatus); // Mentor upda
 router.put("/reply-booking/:bookingId", protectMentor, replyToStudentSession);
 router.get("/my-batches", protectMentor, getAssignedBatches);
 router.get("/batch/:batchId",protectMentor, getBatchById);
+router.delete("/session/:id",protectMentor, deleteSession);
 
 router.get("/:mentorId", protectMentor, getMentorBookings); 
 module.exports = router;

@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerCourseCreator, loginCourseCreator ,createCourseByCreator,updateCourse,getAllCourses,deleteCourse} = require("../controllers/courseCreatorAuthController");
+const { registerCourseCreator, loginCourseCreator ,createCourseByCreator,updateCourseByCreator,getAllCourses,deleteCourse} = require("../controllers/courseCreatorAuthController");
 const { courseCreatorProtect } = require("../middleware/authMiddleware");
 const uploadCourseCreatorPhoto = require("../middleware/uploadCourseCreatorPhoto");
 const upload = require("../middleware/multer");
@@ -13,9 +13,16 @@ router.post(
     upload.single("photo"),
     createCourseByCreator
   );
-router.put("/:courseId", courseCreatorProtect, updateCourse);
+  router.put(
+    "/course/update/:id",
+    courseCreatorProtect,
+    upload.single("photo"), // for image upload
+    updateCourseByCreator
+  );
+  
+
 router.get("/",courseCreatorProtect,getAllCourses);
 router.delete("/:courseId", courseCreatorProtect, deleteCourse);
-
+//router.put("/course/update/:id", courseCreatorProtect, upload.single("photo"), updateCourseByCreator);
 
 module.exports = router;
