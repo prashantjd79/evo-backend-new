@@ -725,9 +725,9 @@ const getMyBatches = async (req, res) => {
 
   try {
     const batches = await Batch.find({ students: studentId })
-      .populate("course", "title")
-      .populate({ path: "mentor", model: "User", select: "name email" })
-      .select("course mentor batchWeekType time description");
+      // .populate("course", "title")
+      // .populate({ path: "mentor", model: "User", select: "name email" })
+      // .select("course mentor batchWeekType time description");
 
     res.json({ batches });
   } catch (error) {
@@ -852,4 +852,50 @@ const getStudentLessonScores = async (req, res) => {
   }
 };
 
-module.exports = { signupStudent,getStudentLessonScores,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+
+const updateStudentProfile = async (req, res) => {
+  try {
+    const studentId = req.user?._id;
+
+    if (!studentId) {
+      return res.status(401).json({ message: "Unauthorized: No student ID found" });
+    }
+
+    const updates = {
+      name: req.body.name,
+      dob: req.body.dob,
+      email: req.body.email,
+      contactNumber: req.body.contactNumber,
+      guardianName: req.body.guardianName,
+      address: req.body.address,
+      education: req.body.education,
+      preferredLanguages: req.body.preferredLanguages,
+      wannaBeInterest: req.body.wannaBeInterest,
+    };
+
+    // ✅ Handle photo if provided (optional)
+    if (req.file) {
+      updates.photo = `students/${req.file.filename}`;
+    } else if (req.body.photo) {
+      updates.photo = req.body.photo;
+    }
+
+    const updatedStudent = await User.findByIdAndUpdate(studentId, updates, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedStudent) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.status(200).json({
+      message: "Student profile updated successfully",
+      student: updatedStudent,
+    });
+  } catch (error) {
+    console.error("❌ Error updating student profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { signupStudent,updateStudentProfile,getStudentLessonScores,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

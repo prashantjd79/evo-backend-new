@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerAdmin,toggleUserBanStatus,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+const { registerAdmin,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
     getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
@@ -49,10 +49,11 @@ router.delete("/ticket/:id",adminProtect, deleteTicket);
 router.delete("/announcement/:id",adminProtect, deleteAnnouncement);
 router.get("/by-lesson/:lessonId", getAssignmentByLessonId);
 router.get("/admin/batch/:batchId/students",adminProtect, getBatchStudents);
-router.get("/reviews", adminProtect, getAllReviews);
+router.get("/reviews", getAllReviews);
 router.get("/user-profile/:id", adminProtect, getUserProfileById);
 //router.put("/course/update/:id", adminProtect, upload.single("photo"), updateCourse);
 router.put("/ban-user/:id", adminProtect, toggleUserBanStatus);
 router.post("/transactions", createTransaction);
 router.put("/transactions/:id/mark-paid", markTransactionAsPaid);
+router.put("/profile", adminProtect, upload.single("photo"), updateAdminProfile);
 module.exports = router;

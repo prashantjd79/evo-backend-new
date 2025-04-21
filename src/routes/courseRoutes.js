@@ -23,7 +23,7 @@ const setCourseUploadType = (req, res, next) => {
   );
 
 
-router.get("/", adminProtect, getAllCourses);
+router.get("/", getAllCourses);
 router.get("/:id", adminProtect, getCourseById);
 router.put("/assign-wanna-be-interest", adminProtect, assignWannaBeInterestToCourse);
 router.put("/course/update/:id", adminProtect, upload.single("photo"), updateCourseByAdmin);

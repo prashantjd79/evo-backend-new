@@ -230,7 +230,48 @@ const registerEmployer = async (req, res) => {
   }
 };
 
-  
+const updateEmployerProfile = async (req, res) => {
+  try {
+    const employerId = req.employer?._id;
+
+    if (!employerId) {
+      return res.status(401).json({ message: "Unauthorized: Employer not found" });
+    }
+
+    const updates = {
+      type: req.body.type,
+      name: req.body.name,
+      email: req.body.email,
+      contactNumber: req.body.contactNumber,
+      industry: req.body.industry,
+      address: req.body.address,
+      companySize: req.body.companySize,
+    };
+
+    // ✅ Handle profile photo upload
+    if (req.file) {
+      updates.photo = `employers/${req.file.filename}`;
+    } else if (req.body.photo) {
+      updates.photo = req.body.photo;
+    }
+
+    const updatedEmployer = await User.findByIdAndUpdate(employerId, updates, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedEmployer) {
+      return res.status(404).json({ message: "Employer not found" });
+    }
+
+    res.status(200).json({
+      message: "Employer profile updated successfully",
+      employer: updatedEmployer,
+    });
+  } catch (error) {
+    console.error("❌ Error updating employer profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // Login Employer
 const loginEmployer = async (req, res) => {
@@ -386,4 +427,4 @@ const deleteJobByEmployer = async (req, res) => {
   }
 };
 
-module.exports = { postJob,updateApplicationStatus,updateJobByEmployer,deleteJobByEmployer,getStudentById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };
+module.exports = { postJob,updateEmployerProfile,updateApplicationStatus,updateJobByEmployer,deleteJobByEmployer,getStudentById, reviewJob, getEmployerJobs, applyForJob, getJobApplicants,registerEmployer, loginEmployer  };

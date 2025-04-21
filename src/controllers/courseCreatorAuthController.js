@@ -178,59 +178,49 @@ const generateToken = (_id, role, email) => {
 
 
 
-  // const updateCourseByCreator = async (req, res) => {
-  //   try {
-  //     const creatorId = req.courseCreator?._id;
-  //     const courseId = req.params.id;
+  const updateCourseCreatorProfile = async (req, res) => {
+    try {
+      const creatorId = req.courseCreator?._id;
   
-  //     console.log("🛠️ Incoming course update request...");
-  //     console.log("🔑 Creator ID from token:", creatorId);
-  //     console.log("📦 Course ID from params:", courseId);
+      if (!creatorId) {
+        return res.status(401).json({ message: "Unauthorized: Course Creator not found" });
+      }
   
-  //     const course = await Course.findById(courseId);
+      const updates = {
+        username: req.body.username,
+        email: req.body.email,
+        dob: req.body.dob,
+        contactNumber: req.body.contactNumber,
+        address: req.body.address,
+        workingMode: req.body.workingMode,
+        education: req.body.education,
+        about: req.body.about,
+      };
   
-  //     if (!course) {
-  //       console.log("❌ Course not found in database.");
-  //       return res.status(404).json({ message: "Course not found" });
-  //     }
+      // ✅ Handle photo update
+      if (req.file) {
+        updates.photo = `coursecreators/${req.file.filename}`;
+      } else if (req.body.photo) {
+        updates.photo = req.body.photo;
+      }
   
-  //     console.log("📘 Course found:", course.title);
-  //     console.log("📘 Course originally createdBy:", course.createdBy.toString());
+      const updatedCourseCreator = await User.findByIdAndUpdate(creatorId, updates, {
+        new: true,
+      }).select("-password");
   
-  //     // ✅ Ownership check removed
-  //     console.log("🔓 Bypassing creator check — any course creator can update.");
+      if (!updatedCourseCreator) {
+        return res.status(404).json({ message: "Course Creator not found" });
+      }
   
-  //     const updatedCourse = await Course.findByIdAndUpdate(
-  //       courseId,
-  //       {
-  //         title: req.body.title,
-  //         description: req.body.description,
-  //         whatYouWillLearn: req.body.whatYouWillLearn,
-  //         youtubeLink: req.body.youtubeLink,
-  //         timing: req.body.timing,
-  //         categoryId: req.body.categoryId,
-  //         subcategoryId: req.body.subcategoryId,
-  //         wannaBeInterestIds: req.body.wannaBeInterestIds,
-  //         realPrice: req.body.realPrice,
-  //         discountedPrice: req.body.discountedPrice,
-  //         tags: req.body.tags,
-  //         photo: req.body.photo,
-  //         review: req.body.review,
-  //       },
-  //       { new: true }
-  //     );
-  
-  //     console.log("✅ Course updated successfully.");
-  
-  //     res.status(200).json({
-  //       message: "Course updated by Course Creator",
-  //       course: updatedCourse,
-  //     });
-  //   } catch (error) {
-  //     console.error("❌ Error in updateCourseByCreator:", error);
-  //     res.status(500).json({ message: "Internal server error" });
-  //   }
-  // };
+      res.status(200).json({
+        message: "Course Creator profile updated successfully",
+        courseCreator: updatedCourseCreator,
+      });
+    } catch (error) {
+      console.error("❌ Error updating course creator profile:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
 
 
 
@@ -310,4 +300,4 @@ const deleteCourse = async (req, res) => {
 };
 
 
-module.exports = { registerCourseCreator,loginCourseCreator,createCourseByCreator,updateCourseByCreator,getAllCourses,deleteCourse };
+module.exports = { registerCourseCreator,updateCourseCreatorProfile,loginCourseCreator,createCourseByCreator,updateCourseByCreator,getAllCourses,deleteCourse };

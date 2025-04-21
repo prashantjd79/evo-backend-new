@@ -1,5 +1,5 @@
 const express = require("express");
-const { postJob, reviewJob,updateJobByEmployer,deleteJobByEmployer,updateApplicationStatus, getEmployerJobs,getStudentById,applyForJob, getJobApplicants,registerEmployer,loginEmployer } = require("../controllers/jobController");
+const { postJob, reviewJob,updateEmployerProfile,updateJobByEmployer,deleteJobByEmployer,updateApplicationStatus, getEmployerJobs,getStudentById,applyForJob, getJobApplicants,registerEmployer,loginEmployer } = require("../controllers/jobController");
 const { employerProtect } = require("../middleware/authMiddleware");
 const { adminProtect } = require("../middleware/authMiddleware");
 const { studentProtect } = require("../middleware/authMiddleware");
@@ -18,5 +18,5 @@ router.get("/student/:id", employerProtect, getStudentById);
 router.put("/update-status", employerProtect, updateApplicationStatus);
 router.put("/job/update/:id", employerProtect, updateJobByEmployer);
 router.delete("/job/delete/:id", employerProtect, deleteJobByEmployer);
-
+router.put("/profile", employerProtect, uploadEmployerPhoto.single("photo"), updateEmployerProfile);
 module.exports = router;

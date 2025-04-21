@@ -114,5 +114,49 @@ const generateToken = (id, role) => {
   }
 };
 
+const updateManagerProfile = async (req, res) => {
+  try {
+    const managerId = req.manager?.id;
 
-module.exports = { registerManager,getAssignedMentors, loginManager };
+    if (!managerId) {
+      return res.status(401).json({ message: "Unauthorized: Manager not found" });
+    }
+
+    const updates = {
+      name: req.body.name,
+      username: req.body.username,
+      dob: req.body.dob,
+      email: req.body.email,
+      contactNumber: req.body.contactNumber,
+      about: req.body.about,
+      address: req.body.address,
+      education: req.body.education,
+      workingMode: req.body.workingMode,
+    };
+
+    // ✅ Photo handling (form-data)
+    if (req.file) {
+      updates.photo = `managers/${req.file.filename}`;
+    } else if (req.body.photo) {
+      updates.photo = req.body.photo;
+    }
+
+    const updatedManager = await User.findByIdAndUpdate(managerId, updates, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedManager) {
+      return res.status(404).json({ message: "Manager not found" });
+    }
+
+    res.status(200).json({
+      message: "Manager profile updated successfully",
+      manager: updatedManager,
+    });
+  } catch (error) {
+    console.error("❌ Error updating manager profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { registerManager,getAssignedMentors,updateManagerProfile, loginManager };

@@ -193,53 +193,57 @@ const gradeAssignment = async (req, res) => {
 };
 
 
-// const gradeAssignment = async (req, res) => {
-//   const { assignmentId, score, feedback } = req.body;
+const updateMentorProfile = async (req, res) => {
+  try {
+    const mentorId = req.mentor?.id; // ✅ From token via mentorProtect
 
-//   try {
-//     // ✅ Fetch the assignment and populate lesson details
-//     const assignment = await SubmittedAssignment.findById(assignmentId).populate("lesson");
+    if (!mentorId) {
+      return res.status(401).json({ message: "Unauthorized: No mentor ID found" });
+    }
 
-//     if (!assignment) return res.status(404).json({ message: "Assignment not found" });
+    const updates = {
+      name: req.body.name,
+      username: req.body.username,
+      dob: req.body.dob,
+      email: req.body.email,
+      contactNumber: req.body.contactNumber,
+      bio: req.body.bio,
+      address: req.body.address,
+      education: req.body.education,
+      expertise: req.body.expertise,
+      workingMode: req.body.workingMode,
+    };
 
-//     console.log("Assignment Data Before Grading:", assignment);
+    // ✅ Handle photo
+    if (req.file) {
+      updates.photo = `mentors/${req.file.filename}`;
+    } else if (req.body.photo) {
+      updates.photo = req.body.photo; // fallback external URL or same photo
+    }
 
-//     // ✅ Ensure assignment has a courseId
-//     if (!assignment.course && assignment.lesson?.course) {
-//       assignment.course = assignment.lesson.course;
-//       await assignment.save();
-//       console.log("✅ Updated Assignment with CourseId:", assignment);
-//     }
+    const updatedMentor = await User.findByIdAndUpdate(mentorId, updates, {
+      new: true,
+    });
 
-//     if (!assignment.course) {
-//       console.error("❌ Error: Assignment does not have a courseId!");
-//       return res.status(500).json({ message: "Assignment does not have a valid courseId." });
-//     }
+    if (!updatedMentor) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
 
-//     // ✅ Directly save score (already out of 10)
-//     assignment.score = score;
-//     assignment.feedback = feedback;
-//     await assignment.save();
+    res.status(200).json({
+      message: "Mentor profile updated successfully",
+      mentor: updatedMentor,
+    });
+  } catch (error) {
+    console.error("❌ Error in updateMentorProfile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
-//     console.log("✅ Assignment Graded Successfully:", assignment);
-
-//     // ✅ Update Evo Score
-//     await updateEvoScore(assignment.student, assignment.course);
-
-//     res.json({
-//       message: "Assignment graded successfully. Evo Score updated.",
-//       assignment
-//     });
-
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 
 const getMyProfileByRole = async (req, res) => {
   try {
-    const id = req.user?.id || req.mentor?.id || req.student?.id || req.employer?.id || req.courseCreator?.id || req.publisher?.id || req.manager?.id;
+    const id = req.user?.id || req.mentor?.id || req.student?.id || req.employer?.id || req.courseCreator?._id || req.publisher?.id || req.manager?.id;
 
     if (!id) return res.status(401).json({ message: "Unauthorized" });
 
@@ -287,5 +291,5 @@ const getApprovedBlogs = async (req, res) => {
 
 
 
-module.exports = { registerMentor,getApprovedBlogs, loginMentor,getSubmittedAssignments,gradeAssignment, getMyProfileByRole,getReviewsByCourseId
+module.exports = { registerMentor,getApprovedBlogs,updateMentorProfile, loginMentor,getSubmittedAssignments,gradeAssignment, getMyProfileByRole,getReviewsByCourseId
   };

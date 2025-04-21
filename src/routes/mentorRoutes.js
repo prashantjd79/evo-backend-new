@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerMentor, loginMentor,getSubmittedAssignments,getApprovedBlogs,getReviewsByCourseId,gradeAssignment,getMyProfileByRole} = require("../controllers/mentorController");
+const { registerMentor, loginMentor,getSubmittedAssignments,getApprovedBlogs,getReviewsByCourseId,gradeAssignment,getMyProfileByRole, updateMentorProfile} = require("../controllers/mentorController");
 const { protectMentor, adminProtect,studentProtect,
     employerProtect,
     courseCreatorProtect,
@@ -25,5 +25,5 @@ router.get("/publisher/me", publisherProtect, getMyProfileByRole);
 router.get("/manager/me", managerProtect, getMyProfileByRole);
 router.get("/course/:courseId", getReviewsByCourseId);
 router.get("/approved", getApprovedBlogs);
-
+router.put("/profile", protectMentor, uploadMentorPhoto.single("photo"), updateMentorProfile);
 module.exports = router;

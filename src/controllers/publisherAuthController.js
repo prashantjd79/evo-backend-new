@@ -96,4 +96,50 @@ const loginPublisher = async (req, res) => {
     }
   };
 
-module.exports = { registerPublisher, loginPublisher,getMyBlogs};
+
+  const updatePublisherProfile = async (req, res) => {
+    try {
+      const publisherId = req.publisher?.id;
+  
+      if (!publisherId) {
+        return res.status(401).json({ message: "Unauthorized: Publisher not found" });
+      }
+  
+      const updates = {
+        name: req.body.name,
+        username: req.body.username,
+        email: req.body.email,
+        dob: req.body.dob,
+        contactNumber: req.body.contactNumber,
+        address: req.body.address,
+        workingMode: req.body.workingMode,
+        education: req.body.education,
+        about: req.body.about,
+      };
+  
+      // ✅ Handle photo update (form-data)
+      if (req.file) {
+        updates.photo = `publishers/${req.file.filename}`;
+      } else if (req.body.photo) {
+        updates.photo = req.body.photo;
+      }
+  
+      const updatedPublisher = await User.findByIdAndUpdate(publisherId, updates, {
+        new: true,
+      }).select("-password");
+  
+      if (!updatedPublisher) {
+        return res.status(404).json({ message: "Publisher not found" });
+      }
+  
+      res.status(200).json({
+        message: "Publisher profile updated successfully",
+        publisher: updatedPublisher,
+      });
+    } catch (error) {
+      console.error("❌ Error updating publisher profile:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+
+module.exports = { registerPublisher, loginPublisher,getMyBlogs,updatePublisherProfile};
