@@ -171,7 +171,7 @@ const Course = require("../models/Course");
 const mongoose = require("mongoose");
 
 const createReview = async (req, res) => {
-  const { courseId, rating, comment } = req.body;
+  const { courseId, rating, comment, name } = req.body; // Accept name directly
   const userId = req.user._id;
 
   if (!courseId || !rating) {
@@ -179,7 +179,7 @@ const createReview = async (req, res) => {
   }
 
   try {
-    const objectId = new mongoose.Types.ObjectId(courseId); // ✅ FIXED
+    const objectId = new mongoose.Types.ObjectId(courseId);
 
     const courseExists = await Course.findById(objectId);
     if (!courseExists) {
@@ -200,6 +200,7 @@ const createReview = async (req, res) => {
     const newReview = await Review.create({
       course: objectId,
       user: userId,
+      name: name || student.name, // ✅ Use body.name if provided, else fallback
       rating,
       comment,
     });
@@ -214,6 +215,7 @@ const createReview = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 

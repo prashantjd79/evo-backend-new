@@ -667,8 +667,8 @@ const getAdminProfile = async (req, res) => {
 
 const addReviewByAdmin = async (req, res) => {
   try {
-    const { courseId, rating, comment } = req.body;
-    const adminId = req.admin.id; // assuming you use adminProtect middleware
+    const { courseId, rating, comment, name } = req.body; // ⬅️ added `name`
+    const adminId = req.admin.id;
 
     if (!adminId) {
       return res.status(401).json({ message: "Unauthorized. Admin not found." });
@@ -676,7 +676,8 @@ const addReviewByAdmin = async (req, res) => {
 
     const review = await Review.create({
       course: courseId,
-      user: adminId,  // ✅ Set the admin ID here
+      user: adminId,
+      name, // ⬅️ store passed name
       rating,
       comment,
     });

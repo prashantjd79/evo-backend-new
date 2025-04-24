@@ -17,7 +17,7 @@ const { createReview } = require("../controllers/reviewController");
 const { studentProtect } = require("../middleware/authMiddleware");
 
 // Only students allowed
-router.post("/", studentProtect, createReview);
+router.post("/Review", studentProtect, createReview);
 
 module.exports = router;
 
