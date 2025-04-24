@@ -1,6 +1,6 @@
 const express = require("express");
 const { registerAdmin,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
-    getUserProfile,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
+    getUserProfile,getUserTransactions,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
 const { adminProtect } = require("../middleware/authMiddleware");
@@ -25,7 +25,8 @@ router.get("/role/:role", adminProtect, getUsersByRole); // Get all users by rol
 router.get("/analytics", adminProtect, getPlatformAnalytics); // Get platform-wide analytics
 router.put("/status", adminProtect, updateUserStatus); // Update user status (Active/Inactive/Banned)
 router.get("/courses", adminProtect, getCoursesWithDetails);
-router.get("/", adminProtect, getTransactions); // Get transactions (filtered by Course & Path)
+router.get("/admin/transactions",adminProtect, getAllTransactions);
+ // Get transactions (filtered by Course & Path)
  // Export transactions as CSV
 router.put("/assign-mentors", adminProtect, assignMentorsToManager);
 router.get("/assignments", adminProtect, getAllSubmittedAssignments);
@@ -40,7 +41,7 @@ router.get("/allsubcat", getAllSubcategories);
 router.get("/allwanna", getAllWannaBeInterests);
 router.get("/me", adminProtect, getAdminProfile);
 router.get("/transactions/export", adminProtect, exportTransactionsCSV);
-router.get("/transactions", adminProtect, getTransactions);
+//router.get("/transactions", adminProtect, getTransactions);
 router.post("/review", adminProtect, addReviewByAdmin);
 router.delete("/batch/:id",adminProtect, deleteBatch);
 router.delete("/course/:id",adminProtect, deleteCourse);
@@ -56,4 +57,6 @@ router.put("/ban-user/:id", adminProtect, toggleUserBanStatus);
 router.post("/transactions", createTransaction);
 router.put("/transactions/:id/mark-paid", markTransactionAsPaid);
 router.put("/profile", adminProtect, upload.single("photo"), updateAdminProfile);
+router.get("/user/:userId/transactions", getUserTransactions);
+
 module.exports = router;

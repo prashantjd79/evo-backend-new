@@ -95,25 +95,23 @@ const deleteBatch = async (req, res) => {
 };
 
 
-const getTransactions = async (req, res) => {
-  const { courseId, pathId } = req.query;
-
+const getAllTransactions = async (req, res) => {
   try {
-    const filter = {};
-    if (courseId) filter.course = courseId;
-    if (pathId) filter.path = pathId;
+    const transactions = await Transaction.find()
+      .populate("user", "name email")          // optional: shows user info
+      .populate("course", "title realPrice")   // optional: shows course info
+      .sort({ createdAt: -1 });                // latest first
 
-    const transactions = await Transaction.find(filter)
-      .populate("user", "name email")
-      .populate("course", "title")
-      .populate("path", "title");
-
-    res.json(transactions);
+    res.status(200).json({
+      message: "All transactions fetched successfully",
+      transactions,
+    });
   } catch (error) {
-    console.error("Error fetching transactions:", error);
-    res.status(500).json({ message: error.message });
+    console.error("❌ Error fetching all transactions:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const exportTransactionsCSV = async (req, res) => {
   const { courseId } = req.query;
@@ -825,7 +823,7 @@ const toggleUserBanStatus = async (req, res) => {
 };
 const createTransaction = async (req, res) => {
   try {
-    const { userId, courseId } = req.body;
+    const { userId, courseId, amount, amountPaid } = req.body;
 
     if (!userId || !courseId) {
       return res.status(400).json({ message: "userId and courseId are required" });
@@ -846,10 +844,12 @@ const createTransaction = async (req, res) => {
       return res.status(400).json({ message: "Transaction already exists for this course" });
     }
 
+    const finalAmount = amountPaid || amount || course.discountedPrice || course.realPrice;
+
     const txn = await Transaction.create({
       user: userId,
       course: course._id,
-      amount: course.discountedPrice || course.realPrice,
+      amount: finalAmount,
       status: "Pending",
     });
 
@@ -862,6 +862,29 @@ const createTransaction = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const getUserTransactions = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    const transactions = await Transaction.find({ user: userId })
+      .populate("course", "title realPrice discountedPrice") // optional: shows course details
+      .sort({ createdAt: -1 }); // latest first
+
+    res.status(200).json({
+      message: "Transactions fetched successfully",
+      transactions,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching user transactions:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 
 // controllers/adminController.js
@@ -940,4 +963,4 @@ const updateAdminProfile = async (req, res) => {
 module.exports = { registerAdmin,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,createTransaction,
-   getTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};
+   getAllTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getUserTransactions,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};
