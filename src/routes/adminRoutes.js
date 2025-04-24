@@ -1,13 +1,13 @@
 const express = require("express");
-const { registerAdmin,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
-    getUserProfile,getUserTransactions,getAllCertificates,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
+const { registerAdmin,updateAssignedMentorsToManager,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+    getUserProfile,getUserTransactions,getAllCertificates,getStudentBatchesByAdmin,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
 const { adminProtect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/multer"); // or your upload middleware path
 
 const router = express.Router();
-
+router.get("/student/:studentId/batches", adminProtect, getStudentBatchesByAdmin);
 router.post("/register", registerAdmin);
 router.get("/blogs", adminProtect, getAllBlogs);
 router.put("/blogs/:blogId", adminProtect, approveOrRejectBlog);
@@ -18,7 +18,7 @@ router.get("/me", adminProtect, getMyAdminProfile);
 router.get("/admin/all-progress", adminProtect, getAllStudentsProgress);
 router.put("/approve", adminProtect, approveMentor);
 router.get("/pending", adminProtect, getPendingMentors);
-
+router.put("/manager/update-mentors",adminProtect, updateAssignedMentorsToManager);
 router.get("/jobs", adminProtect, getAllJobs);
 router.get("/profile/:userId", adminProtect, getUserProfile); // Get specific user profile
 router.get("/role/:role", adminProtect, getUsersByRole); // Get all users by role

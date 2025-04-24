@@ -543,6 +543,27 @@ const submitAssignment = async (req, res) => {
   }
 };
 
+const getStudentLessonSubmissions = async (req, res) => {
+  const studentId = req.user._id;
+  const { lessonId } = req.params;
+
+  try {
+    const quiz = await SubmittedQuiz.findOne({ student: studentId, lesson: lessonId });
+    const assignment = await SubmittedAssignment.findOne({ student: studentId, lesson: lessonId });
+
+    if (!quiz && !assignment) {
+      return res.status(404).json({ message: "No submissions found for this lesson." });
+    }
+
+    res.status(200).json({
+      quizSubmission: quiz || null,
+      assignmentSubmission: assignment || null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const submitQuiz = async (req, res) => {
   const { lessonId, answers } = req.body;
   const studentId = req.user._id;
@@ -898,4 +919,4 @@ const updateStudentProfile = async (req, res) => {
   }
 };
 
-module.exports = { signupStudent,updateStudentProfile,getStudentLessonScores,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};
+module.exports = { signupStudent,getStudentLessonSubmissions,updateStudentProfile,getStudentLessonScores,getMyCourseProgress,getStudentApplications,getMyMentorBookings,getApprovedJobsForStudents,getBatchById,getMyBatches,getLessonsByCourseForStudent,getMyEnrolledCourses,getAllCoursesForStudents,verifyOtp,getMyCertificates, getEnrolledPaths,loginStudent, getStudentProfile,applyPromoCode ,applyPromoCodeAndPurchase,submitAssignment,submitQuiz, enrollInCourse, enrollInPath, getEnrolledCourses};

@@ -401,6 +401,30 @@ const assignMentorsToManager = async (req, res) => {
   }
 };
 
+const updateAssignedMentorsToManager = async (req, res) => {
+  const { managerId, mentorIds } = req.body; // Expecting an array of mentor IDs
+
+  try {
+    const manager = await User.findById(managerId);
+    if (!manager || manager.role !== "Manager") {
+      return res.status(404).json({ message: "Manager not found" });
+    }
+
+    // Validate mentor existence
+    const mentors = await User.find({ _id: { $in: mentorIds }, role: "Mentor" });
+    if (mentors.length !== mentorIds.length) {
+      return res.status(400).json({ message: "One or more mentors not found or not valid mentors" });
+    }
+
+    // Update the mentor assignment
+    manager.assignedMentors = mentorIds;
+    await manager.save();
+
+    res.json({ message: "Assigned mentors updated successfully", manager });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 const getAllSubmittedAssignments = async (req, res) => {
@@ -957,10 +981,43 @@ const updateAdminProfile = async (req, res) => {
   }
 };
 
+const getStudentBatchesByAdmin = async (req, res) => {
+  const { studentId } = req.params;
+
+  try {
+    const student = await User.findById(studentId);
+    if (!student || student.role !== "Student") {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const batches = await Batch.find({ students: studentId })
+      .populate({ path: "course", select: "title" }) // Only get course _id and title
+      .select("name course"); // Only get batch name and course reference
+
+    // Transform to show only required fields
+    const simplifiedBatches = batches.map(batch => ({
+      batchId: batch._id,
+      batchName: batch.name,
+      courseId: batch.course?._id,
+      courseName: batch.course?.title
+    }));
+
+    res.status(200).json({
+      student: {
+        _id: student._id,
+        name: student.name,
+        email: student.email
+      },
+      batches: simplifiedBatches
+    });
+  } catch (error) {
+    console.error("Error fetching student batches:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
-
-module.exports = { registerAdmin,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+module.exports = { registerAdmin,getStudentBatchesByAdmin,updateAssignedMentorsToManager,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,createTransaction,
    getAllTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getUserTransactions,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};
