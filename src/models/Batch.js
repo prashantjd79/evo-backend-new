@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
-
+// const slugify = require("slugify");
 const batchSchema = new mongoose.Schema(
 	{
 		name: { type: String, required: true },
+		slug: { type: String, unique: true },
 		description: { type: String },
 		time: { type: String },
 		batchWeekType: {

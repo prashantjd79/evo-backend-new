@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const categorySchema = new mongoose.Schema(
   {
     title: { type: String, required: true, unique: true },
+    slug: { type: String, unique: true },
     description: { type: String },
     photo: { type: String },
     wannaBeInterest: {

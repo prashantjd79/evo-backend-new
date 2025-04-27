@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const subcategorySchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    slug: { type: String, unique: true },
     description: { type: String },
     photo: { type: String },
     category: {

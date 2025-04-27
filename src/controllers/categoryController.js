@@ -1,4 +1,7 @@
 const Category = require("../models/Category");
+const slugify = require("slugify");
+
+
 
 const createCategory = async (req, res) => {
   const { title, description } = req.body;
@@ -8,17 +11,28 @@ const createCategory = async (req, res) => {
     const exists = await Category.findOne({ title });
     if (exists) return res.status(400).json({ message: "Category already exists" });
 
+    
+
+    let generatedSlug = slugify(title, { lower: true, strict: true });
+    const existingCategory = await Category.findOne({ slug: generatedSlug });
+    if (existingCategory) {
+      // If exists, add random 4-digit number
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      generatedSlug = `${generatedSlug}-${randomSuffix}`;
+    }
+
     // Get uploaded file
     const photo = req.file ? `category/${req.file.filename}` : null;
 
     // Create category
-    const category = await Category.create({ title, description, photo });
+    const category = await Category.create({ title, description,  slug: generatedSlug, photo });
 
     res.status(201).json({
       message: "Category created successfully",
       category: {
         _id: category._id,
         title: category.title,
+        slug: category.slug,
         description: category.description,
         photo: category.photo,
       },
@@ -27,6 +41,52 @@ const createCategory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// const createCategory = async (req, res) => {
+//   const { title, description } = req.body;
+
+//   try {
+//     // Check for duplicate title
+//     const exists = await Category.findOne({ title });
+//     if (exists) return res.status(400).json({ message: "Category already exists" });
+
+//     // 🟢 Generate Slug
+//     let generatedSlug = slugify(title, { lower: true, strict: true });
+
+//     // 🟢 Check if a category with same slug already exists
+//     const existingCategory = await Category.findOne({ slug: generatedSlug });
+//     if (existingCategory) {
+//       // If exists, add random 4-digit number
+//       const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+//       generatedSlug = `${generatedSlug}-${randomSuffix}`;
+//     }
+
+//     // Handle uploaded photo
+//     const photo = req.file ? `category/${req.file.filename}` : null;
+
+//     // Create category
+//     const category = await Category.create({
+//       title,
+//       slug: generatedSlug, // 🟢 Save the slug
+//       description,
+//       photo
+//     });
+
+//     res.status(201).json({
+//       message: "Category created successfully",
+//       category: {
+//         _id: category._id,
+//         title: category.title,
+//         slug: category.slug, // 🟢 Return slug too
+//         description: category.description,
+//         photo: category.photo,
+//       },
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 // Get all Categories
 const getCategories = async (req, res) => {

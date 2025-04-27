@@ -1,4 +1,9 @@
 const WannaBeInterest = require("../models/WannaBeInterest");
+const slugify = require("slugify");
+
+
+
+
 
 const createWannaBeInterest = async (req, res) => {
   const { description } = req.body;
@@ -17,9 +22,20 @@ const createWannaBeInterest = async (req, res) => {
       return res.status(400).json({ message: "This entry already exists." });
     }
 
+    let generatedSlug = slugify(title, { lower: true, strict: true });
+
+    // 🟢 Check if slug already exists
+    const existingSlug = await WannaBeInterest.findOne({ slug: generatedSlug });
+    if (existingSlug) {
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      generatedSlug = `${generatedSlug}-${randomSuffix}`;
+    }
+
+
     const newEntry = await WannaBeInterest.create({
       title,
       description,
+      slug: generatedSlug,
       image,
     });
 

@@ -1,6 +1,49 @@
 const Batch = require("../models/Batch");
 const Course = require("../models/Course");
 const User = require("../models/User");
+const slugify = require("slugify");
+
+
+
+// const createBatch = async (req, res) => {
+//   const { name, courseId, description, time, batchWeekType, startDate, endDate } = req.body;
+
+//   try {
+//     const course = await Course.findById(courseId);
+//     if (!course) {
+//       return res.status(404).json({ message: "Course not found" });
+//     }
+
+//     const batch = await Batch.create({
+//       name,
+//       description,
+//       time,
+//       batchWeekType,
+//       startDate,
+//       endDate,
+//       course: courseId,
+//       students: [],
+//       mentor: null,
+//     });
+
+//     res.status(201).json({
+//       message: "Batch created successfully",
+//       batch: {
+//         _id: batch._id,
+//         name: batch.name,
+//         description: batch.description,
+//         time: batch.time,
+//         batchWeekType: batch.batchWeekType,
+//         startDate: batch.startDate,
+//         endDate: batch.endDate,
+//         course: batch.course,
+//       },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 
 const createBatch = async (req, res) => {
   const { name, courseId, description, time, batchWeekType, startDate, endDate } = req.body;
@@ -11,8 +54,20 @@ const createBatch = async (req, res) => {
       return res.status(404).json({ message: "Course not found" });
     }
 
+    // 🟢 Generate Slug from Batch Name
+    let generatedSlug = slugify(name, { lower: true, strict: true });
+
+    // 🟢 Check if a batch with same slug already exists
+    const existingBatch = await Batch.findOne({ slug: generatedSlug });
+    if (existingBatch) {
+      // If slug exists, add random 4-digit number
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      generatedSlug = `${generatedSlug}-${randomSuffix}`;
+    }
+
     const batch = await Batch.create({
       name,
+      slug: generatedSlug, // 🟢 Save slug here
       description,
       time,
       batchWeekType,
@@ -28,6 +83,7 @@ const createBatch = async (req, res) => {
       batch: {
         _id: batch._id,
         name: batch.name,
+        slug: batch.slug, // 🟢 return slug also
         description: batch.description,
         time: batch.time,
         batchWeekType: batch.batchWeekType,
@@ -40,6 +96,7 @@ const createBatch = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
   const assignStudentsToBatch = async (req, res) => {
     const { batchId, studentIds } = req.body; // Expect an array of student IDs
