@@ -51,7 +51,7 @@ const createWannaBeInterest = async (req, res) => {
 // Get all "Wanna Be" and "Interests"
 const getAllWannaBeInterest = async (req, res) => {
   try {
-    const list = await WannaBeInterest.find();
+    const list = await WannaBeInterest.find.select("title slug description image");
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: error.message });
