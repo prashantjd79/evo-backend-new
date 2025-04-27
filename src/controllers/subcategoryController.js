@@ -104,8 +104,8 @@ const getSubcategoriesByCategory = async (req, res) => {
     }
 
     // Fetch subcategories for this category
-    const subcategories = await Subcategory.find({ category: categoryId });
-
+    const subcategories = await Subcategory.find({ category: categoryId })
+    .select("title slug description photo category");
     res.json(subcategories);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -151,6 +151,7 @@ const getBatchesByCourse = async (req, res) => {
 
   try {
     const batches = await Batch.find({ course: courseId })
+    .select("name slug description time batchWeekType startDate endDate mentor students course")
       .populate("students", "name email") // Populate student details
       .populate("mentor", "name email") // Populate mentor details
       .populate("course", "name");

@@ -223,7 +223,8 @@ const createCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find();
+    const courses = await Course.find()
+    .select("title slug description realPrice discountedPrice tags photo category subcategory wannaBeInterest createdBy");
     res.json(courses);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -233,7 +234,8 @@ const getAllCourses = async (req, res) => {
 // Get a single course by ID
 const getCourseById = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const course = await Course.findById(req.params.id)
+    .select("title slug description whatYouWillLearn youtubeLink timing realPrice discountedPrice tags photo category subcategory wannaBeInterest reviews createdBy");
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }

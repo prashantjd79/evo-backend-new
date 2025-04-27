@@ -91,7 +91,7 @@ const createCategory = async (req, res) => {
 // Get all Categories
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categories = await Category.find().select("title slug description photo");
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
