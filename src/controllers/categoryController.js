@@ -148,4 +148,20 @@ const updateCategory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-module.exports = { createCategory, getCategories,deleteCategory,updateCategory };
+const getCategoryBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const category = await Category.findOne({ slug }).select("title slug description photo");
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    res.json(category);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createCategory,getCategoryBySlug, getCategories,deleteCategory,updateCategory };

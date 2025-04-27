@@ -106,5 +106,20 @@ const updateWannaBeInterest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getWannaBeInterestBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const interest = await WannaBeInterest.findOne({ slug }).select("title slug description image");
 
-module.exports = { createWannaBeInterest,updateWannaBeInterest, getAllWannaBeInterest, deleteWannaBeInterest };
+    if (!interest) {
+      return res.status(404).json({ message: "WannaBeInterest not found" });
+    }
+
+    res.json(interest);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createWannaBeInterest,updateWannaBeInterest, getAllWannaBeInterest, deleteWannaBeInterest,getWannaBeInterestBySlug };

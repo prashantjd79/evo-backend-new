@@ -323,5 +323,21 @@ const updateCourseByAdmin = async (req, res) => {
   }
 };
 
+const getCourseBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const course = await Course.findOne({ slug })
+      .select("title slug description whatYouWillLearn youtubeLink timing realPrice discountedPrice tags photo category subcategory wannaBeInterest reviews createdBy");
 
-module.exports = { createCourse,updateCourseByAdmin,getCourseById,getAllCourses ,assignWannaBeInterestToCourse};
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json(course);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createCourse,getCourseBySlug,updateCourseByAdmin,getCourseById,getAllCourses ,assignWannaBeInterestToCourse};

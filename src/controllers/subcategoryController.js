@@ -172,4 +172,20 @@ const updateSubcategory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-module.exports = { createSubcategory, getAllSubcategories,getSubcategoriesByCategory,deleteSubcategory,updateSubcategory };
+const getSubcategoryBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const subcategory = await Subcategory.findOne({ slug }).select("title slug description photo category");
+
+    if (!subcategory) {
+      return res.status(404).json({ message: "Subcategory not found" });
+    }
+
+    res.json(subcategory);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createSubcategory,getSubcategoryBySlug, getAllSubcategories,getSubcategoriesByCategory,deleteSubcategory,updateSubcategory };

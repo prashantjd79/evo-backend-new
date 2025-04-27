@@ -144,6 +144,25 @@ const assignMentorToBatch = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getBatchBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const batch = await Batch.findOne({ slug })
+      .select("name slug description time batchWeekType startDate endDate course mentor students")
+      .populate("course", "title slug")
+      .populate("mentor", "name email")
+      .populate("students", "name email");
+
+    if (!batch) {
+      return res.status(404).json({ message: "Batch not found" });
+    }
+
+    res.json(batch);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Get all Batches of a Course
 const getBatchesByCourse = async (req, res) => {
@@ -207,4 +226,4 @@ const updateBatch = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-module.exports = { createBatch, assignStudentsToBatch, assignMentorToBatch, getBatchesByCourse ,updateBatch};
+module.exports = { createBatch, assignStudentsToBatch, assignMentorToBatch, getBatchesByCourse ,updateBatch,getBatchBySlug};
