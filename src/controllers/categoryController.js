@@ -114,5 +114,38 @@ const deleteCategory = async (req, res) => {
     res.status(500).json({ message: "Failed to delete category" });
   }
 };
+const updateCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const { title, description } = req.body;
+    const photo = req.file ? `category/${req.file.filename}` : undefined;
 
-module.exports = { createCategory, getCategories,deleteCategory };
+    const category = await Category.findById(categoryId);
+    if (!category) return res.status(404).json({ message: "Category not found" });
+
+    // Update title & slug
+    if (title && title !== category.title) {
+      let generatedSlug = slugify(title, { lower: true, strict: true });
+
+      const existingCategory = await Category.findOne({ slug: generatedSlug, _id: { $ne: categoryId } });
+      if (existingCategory) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        generatedSlug = `${generatedSlug}-${randomSuffix}`;
+      }
+
+      category.title = title;
+      category.slug = generatedSlug;
+    }
+
+    if (description) category.description = description;
+    if (photo) category.photo = photo;
+
+    await category.save();
+
+    res.json({ message: "Category updated successfully", category });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { createCategory, getCategories,deleteCategory,updateCategory };

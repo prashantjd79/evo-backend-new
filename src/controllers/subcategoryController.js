@@ -137,4 +137,39 @@ const deleteSubcategory = async (req, res) => {
     res.status(500).json({ message: "Failed to delete subcategory" });
   }
 };
-module.exports = { createSubcategory, getAllSubcategories,getSubcategoriesByCategory,deleteSubcategory };
+const updateSubcategory = async (req, res) => {
+  try {
+    const subcategoryId = req.params.id;
+    const { title, description, categoryId } = req.body;
+    const photo = req.file ? `subcategory/${req.file.filename}` : undefined;
+
+    const subcategory = await Subcategory.findById(subcategoryId);
+    if (!subcategory) return res.status(404).json({ message: "Subcategory not found" });
+
+    // Update title & slug
+    if (title && title !== subcategory.title) {
+      let generatedSlug = slugify(title, { lower: true, strict: true });
+
+      const existingSubcategory = await Subcategory.findOne({ slug: generatedSlug, _id: { $ne: subcategoryId } });
+      if (existingSubcategory) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        generatedSlug = `${generatedSlug}-${randomSuffix}`;
+      }
+
+      subcategory.title = title;
+      subcategory.slug = generatedSlug;
+    }
+
+    if (description) subcategory.description = description;
+    if (photo) subcategory.photo = photo;
+    if (categoryId) subcategory.category = categoryId;
+
+    await subcategory.save();
+
+    res.json({ message: "Subcategory updated successfully", subcategory });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { createSubcategory, getAllSubcategories,getSubcategoriesByCategory,deleteSubcategory,updateSubcategory };

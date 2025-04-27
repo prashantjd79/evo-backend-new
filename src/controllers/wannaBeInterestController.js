@@ -72,4 +72,39 @@ const deleteWannaBeInterest = async (req, res) => {
   }
 };
 
-module.exports = { createWannaBeInterest, getAllWannaBeInterest, deleteWannaBeInterest };
+const updateWannaBeInterest = async (req, res) => {
+  try {
+    const wannaBeId = req.params.id;
+    const { title, description } = req.body;
+    const image = req.file?.path;
+
+    const wannaBe = await WannaBeInterest.findById(wannaBeId);
+    if (!wannaBe) return res.status(404).json({ message: "Wanna Be/Interest not found" });
+
+    // Update title & slug
+    if (title && title !== wannaBe.title) {
+      let generatedSlug = slugify(title, { lower: true, strict: true });
+
+      const existingWannaBe = await WannaBeInterest.findOne({ slug: generatedSlug, _id: { $ne: wannaBeId } });
+      if (existingWannaBe) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        generatedSlug = `${generatedSlug}-${randomSuffix}`;
+      }
+
+      wannaBe.title = title;
+      wannaBe.slug = generatedSlug;
+    }
+
+    if (description) wannaBe.description = description;
+    if (image) wannaBe.image = image;
+
+    await wannaBe.save();
+
+    res.json({ message: "Wanna Be/Interest updated successfully", wannaBe });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createWannaBeInterest,updateWannaBeInterest, getAllWannaBeInterest, deleteWannaBeInterest };

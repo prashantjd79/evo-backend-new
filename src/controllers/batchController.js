@@ -160,5 +160,50 @@ const getBatchesByCourse = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const updateBatch = async (req, res) => {
+  try {
+    const batchId = req.params.id;
+    const {
+      name,
+      description,
+      time,
+      batchWeekType,
+      startDate,
+      endDate,
+      courseId,
+    } = req.body;
 
-module.exports = { createBatch, assignStudentsToBatch, assignMentorToBatch, getBatchesByCourse };
+    const batch = await Batch.findById(batchId);
+    if (!batch) return res.status(404).json({ message: "Batch not found" });
+
+    // Update name & slug if name changed
+    if (name && name !== batch.name) {
+      let generatedSlug = slugify(name, { lower: true, strict: true });
+
+      const existingBatch = await Batch.findOne({ slug: generatedSlug, _id: { $ne: batchId } });
+      if (existingBatch) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        generatedSlug = `${generatedSlug}-${randomSuffix}`;
+      }
+
+      batch.name = name;
+      batch.slug = generatedSlug;
+    }
+
+    if (description) batch.description = description;
+    if (time) batch.time = time;
+    if (batchWeekType) batch.batchWeekType = batchWeekType;
+    if (startDate) batch.startDate = startDate;
+    if (endDate) batch.endDate = endDate;
+    if (courseId) batch.course = courseId;
+
+    await batch.save();
+
+    res.json({ message: "Batch updated successfully", batch });
+
+  } catch (error) {
+    console.error("❌ Batch update failed:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { createBatch, assignStudentsToBatch, assignMentorToBatch, getBatchesByCourse ,updateBatch};
