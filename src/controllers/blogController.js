@@ -119,7 +119,7 @@ const getBlogBySlug = async (req, res) => {
     const { slug } = req.params;
     const blog = await Blog.findOne({ slug })
       .select("title slug content tags image conclusion creator status createdAt updatedAt")
-      .populate("creator", "name email");
+      .populate("creator", "name email photo");
 
     if (!blog) {
       return res.status(404).json({ message: "Blog not found" });
