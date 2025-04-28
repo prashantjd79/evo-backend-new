@@ -15,7 +15,7 @@ router.post(
   router.get("/slug/:slug", getCategoryBySlug);
 
   router.put("/update/:id", adminProtect, uploadCategoryIcon.single("photo"), updateCategory);
-router.get("/", adminProtect, getCategories);
+router.get("/", getCategories);
 router.delete("/category/:id", adminProtect, deleteCategory);
 
 module.exports = router;
