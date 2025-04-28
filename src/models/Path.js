@@ -17,6 +17,7 @@ const mongoose = require("mongoose");
 const pathSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
+    slug: { type: String, unique: true },
     description: { type: String },
     photo: { type: String }, // e.g., uploads/paths/banner.jpg
     timing: { type: String }, // e.g., "8 weeks"

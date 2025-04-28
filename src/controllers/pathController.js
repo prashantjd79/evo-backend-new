@@ -1,7 +1,7 @@
 const Path = require("../models/Path");
 const Course = require("../models/Course");
 const WannaBeInterest = require("../models/WannaBeInterest");
-
+const slugify = require("slugify"); 
 // const createPath = async (req, res) => {
 //     const { name, description, courseIds, wannaBeInterestIds } = req.body;
   
@@ -71,9 +71,17 @@ const createPath = async (req, res) => {
     }
 
     const photo = req.file ? `path/${req.file.filename}` : null;
+    let generatedSlug = slugify(title, { lower: true, strict: true });
 
+    // 🟢 Check if a path with same slug already exists
+    const existingPath = await Path.findOne({ slug: generatedSlug });
+    if (existingPath) {
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      generatedSlug = `${generatedSlug}-${randomSuffix}`;
+    }
     const pathDoc = await Path.create({
       title,
+      slug: generatedSlug,
       description,
       timing,
       price: Number(price),
@@ -202,9 +210,101 @@ const getPathById = async (req, res) => {
   }
 };
 
+const updatePath = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      title,
+      description,
+      timing,
+      price,
+      courseIds,
+      wannaBeInterestIds
+    } = req.body;
+
+    const pathDoc = await Path.findById(id);
+    if (!pathDoc) {
+      return res.status(404).json({ message: "Path not found" });
+    }
+
+    // 🟢 Handle Title and Slug
+    if (title && title !== pathDoc.title) {
+      let generatedSlug = slugify(title, { lower: true, strict: true });
+
+      const existingPath = await Path.findOne({ slug: generatedSlug, _id: { $ne: id } });
+      if (existingPath) {
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        generatedSlug = `${generatedSlug}-${randomSuffix}`;
+      }
+
+      pathDoc.title = title;
+      pathDoc.slug = generatedSlug;
+    }
+
+    // 🟢 Update other fields if provided
+    if (description) pathDoc.description = description;
+    if (timing) pathDoc.timing = timing;
+    if (price) pathDoc.price = Number(price);
+
+    // 🟢 Parse courseIds and wannaBeInterestIds if provided
+    if (courseIds) {
+      const parsedCourseIds = courseIds.split(",").map(id => id.trim());
+      const validCourses = await Course.find({ _id: { $in: parsedCourseIds } });
+      if (validCourses.length !== parsedCourseIds.length) {
+        return res.status(400).json({ message: "Some course IDs are invalid" });
+      }
+      pathDoc.courses = parsedCourseIds;
+    }
+
+    if (wannaBeInterestIds) {
+      const parsedWannaBeIds = wannaBeInterestIds.split(",").map(id => id.trim());
+      const validWannaBe = await WannaBeInterest.find({ _id: { $in: parsedWannaBeIds } });
+      if (validWannaBe.length !== parsedWannaBeIds.length) {
+        return res.status(400).json({ message: "Some WannaBeInterest IDs are invalid" });
+      }
+      pathDoc.wannaBeInterest = parsedWannaBeIds;
+    }
+
+    // 🟢 Handle Photo update if new file uploaded
+    if (req.file) {
+      pathDoc.photo = `path/${req.file.filename}`;
+    }
+
+    await pathDoc.save();
+
+    res.json({ message: "Path updated successfully", path: pathDoc });
+
+  } catch (error) {
+    console.error("Update Path Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getPathBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const pathDoc = await Path.findOne({ slug })
+      .select("title slug description timing price photo courses wannaBeInterest createdAt updatedAt")
+      .populate("courses", "title slug photo")  // populate course title and slug
+      .populate("wannaBeInterest", "title slug image"); // populate WannaBeInterest title and slug
+
+    if (!pathDoc) {
+      return res.status(404).json({ message: "Path not found" });
+    }
+
+    res.json(pathDoc);
+
+  } catch (error) {
+    console.error("❌ Error fetching Path by slug:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
 
 
-module.exports = { createPath,deletePath, assignWannaBeInterestToPath ,getPaths,getPathById};
+
+module.exports = { createPath,getPathBySlug,deletePath, updatePath,assignWannaBeInterestToPath ,getPaths,getPathById};
