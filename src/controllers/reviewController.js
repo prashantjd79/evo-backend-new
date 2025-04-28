@@ -1,115 +1,14 @@
-// const Review = require("../models/Review");
-// const Course = require("../models/Course");
-// const Path = require("../models/Path");
-
-// const submitCourseReview = async (req, res) => {
-//     const { courseId, rating, reviewText } = req.body; // ✅ Removed `studentId`
-  
-//     try {
-//       // ✅ Ensure student is authenticated
-//       if (!req.student || !req.student.id) {
-//         return res.status(401).json({ message: "Unauthorized: No student ID found in token" });
-//       }
-  
-//       const course = await Course.findById(courseId);
-//       if (!course) return res.status(404).json({ message: "Course not found" });
-  
-//       // ✅ Prevent duplicate reviews
-//       const existingReview = await Review.findOne({ student: req.student.id, course: courseId });
-//       if (existingReview) {
-//         return res.status(400).json({ message: "You have already reviewed this course" });
-//       }
-  
-//       // ✅ Create the review with the correct student ID
-//       const review = await Review.create({
-//         student: req.student.id,
-//         course: courseId,
-//         rating,
-//         reviewText,
-//       });
-  
-//       res.status(201).json({ message: "Review submitted successfully", review });
-//     } catch (error) {
-//       res.status(500).json({ message: error.message });
-//     }
-//   };
-//   const submitPathReview = async (req, res) => {
-//     const { pathId, rating, reviewText } = req.body; // ✅ Removed `studentId`
-  
-//     try {
-//       // ✅ Ensure student is authenticated
-//       if (!req.student || !req.student.id) {
-//         return res.status(401).json({ message: "Unauthorized: No student ID found in token" });
-//       }
-  
-//       const path = await Path.findById(pathId);
-//       if (!path) return res.status(404).json({ message: "Path not found" });
-  
-//       // ✅ Prevent duplicate reviews
-//       const existingReview = await Review.findOne({ student: req.student.id, path: pathId });
-//       if (existingReview) {
-//         return res.status(400).json({ message: "You have already reviewed this path" });
-//       }
-  
-//       // ✅ Create the review with the correct student ID
-//       const review = await Review.create({
-//         student: req.student.id,
-//         path: pathId,
-//         rating,
-//         reviewText,
-//       });
-  
-//       res.status(201).json({ message: "Review submitted successfully", review });
-//     } catch (error) {
-//       res.status(500).json({ message: error.message });
-//     }
-//   };
-  
-
-// // Get Reviews for a Course
-// const getCourseReviews = async (req, res) => {
-//   const { courseId } = req.params;
-
-//   try {
-//     const reviews = await Review.find({ course: courseId }).populate("student", "name email");
-//     res.json(reviews);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Get Reviews for a Path
-// const getPathReviews = async (req, res) => {
-//   const { pathId } = req.params;
-
-//   try {
-//     const reviews = await Review.find({ path: pathId }).populate("student", "name email");
-//     res.json(reviews);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// module.exports = { submitCourseReview, submitPathReview, getCourseReviews, getPathReviews };
-
-
-// controllers/reviewController.js
-
-
-
-
-
-
-
-
-
 
 // const Review = require("../models/Review");
 // const User = require("../models/User");
 // const Course = require("../models/Course");
 
+
+
+// const mongoose = require("mongoose");
+
 // const createReview = async (req, res) => {
-//   const { courseId, rating, comment } = req.body;
+//   const { courseId, rating, comment, name } = req.body; // Accept name directly
 //   const userId = req.user._id;
 
 //   if (!courseId || !rating) {
@@ -117,14 +16,16 @@
 //   }
 
 //   try {
-//     const courseExists = await Course.findById(courseId);
+//     const objectId = new mongoose.Types.ObjectId(courseId);
+
+//     const courseExists = await Course.findById(objectId);
 //     if (!courseExists) {
 //       return res.status(404).json({ message: "Course not found." });
 //     }
 
 //     const student = await User.findById(userId);
-//     const enrolled = student.enrolledCourses.some((enrollment) =>
-//       enrollment.course.toString() === courseId
+//     const enrolled = student.enrolledCourses.some(
+//       (enrollment) => enrollment.course.toString() === courseId
 //     );
 
 //     if (!enrolled) {
@@ -134,8 +35,9 @@
 //     }
 
 //     const newReview = await Review.create({
-//       course: courseId,
+//       course: objectId,
 //       user: userId,
+//       name: name || student.name, // ✅ Use body.name if provided, else fallback
 //       rating,
 //       comment,
 //     });
@@ -146,17 +48,15 @@
 //     });
 
 //   } catch (error) {
+//     console.error("❌ Review creation failed:", error);
 //     res.status(500).json({ message: error.message });
 //   }
 // };
 
+
+
+
 // module.exports = { createReview };
-
-
-
-
-
-
 
 
 
@@ -165,13 +65,11 @@
 const Review = require("../models/Review");
 const User = require("../models/User");
 const Course = require("../models/Course");
-
-
-
 const mongoose = require("mongoose");
-
+const slugify = require("slugify");
+// ✅ Create Review (your existing)
 const createReview = async (req, res) => {
-  const { courseId, rating, comment, name } = req.body; // Accept name directly
+  const { courseId, rating, comment, name } = req.body;
   const userId = req.user._id;
 
   if (!courseId || !rating) {
@@ -200,7 +98,7 @@ const createReview = async (req, res) => {
     const newReview = await Review.create({
       course: objectId,
       user: userId,
-      name: name || student.name, // ✅ Use body.name if provided, else fallback
+      name: name || student.name,
       rating,
       comment,
     });
@@ -216,7 +114,91 @@ const createReview = async (req, res) => {
   }
 };
 
+// ✅ Update Review
+const updateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { rating, comment } = req.body;
+    const userId = req.user._id;
+
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review not found." });
+    }
+
+    // Check if the logged in user is owner of this review
+    if (review.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You can only update your own reviews." });
+    }
+
+    if (rating) review.rating = rating;
+    if (comment) review.comment = comment;
+
+    await review.save();
+
+    res.json({ message: "Review updated successfully.", review });
+
+  } catch (error) {
+    console.error("❌ Review update failed:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ Delete Review
+const deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user._id;
+
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review not found." });
+    }
+
+    // Check if the logged in user is owner of this review
+    if (review.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You can only delete your own reviews." });
+    }
+
+    await review.deleteOne();
+
+    res.json({ message: "Review deleted successfully." });
+
+  } catch (error) {
+    console.error("❌ Review delete failed:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+const getReviewsByCourseSlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // 🔥 Find course by slug
+    const course = await Course.findOne({ slug }).select("_id title");
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+
+    // 🔥 Now get reviews by course ID
+    const reviews = await Review.find({ course: course._id })
+      .populate("user", "name email photo") // populate student details
+      .sort({ createdAt: -1 }); // latest reviews first
+
+    res.json({ course: course.title, reviews });
+
+  } catch (error) {
+    console.error("❌ Get Reviews by Course Slug Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
-
-module.exports = { createReview };
+module.exports = { 
+  createReview,
+  getReviewsByCourseSlug, 
+  updateReview, 
+  deleteReview 
+};

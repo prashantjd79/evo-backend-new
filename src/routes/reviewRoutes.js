@@ -1,23 +1,29 @@
-// const express = require("express");
-// const { submitCourseReview, submitPathReview, getCourseReviews, getPathReviews } = require("../controllers/reviewController");
+
+
+
+// const router = require("express").Router();
+// const { createReview } = require("../controllers/reviewController");
 // const { studentProtect } = require("../middleware/authMiddleware");
 
-// const router = express.Router();
-
-// router.post("/course", studentProtect, submitCourseReview); // Submit a course review
-// router.post("/path", studentProtect, submitPathReview); // Submit a path review
-// router.get("/course/:courseId",  getCourseReviews); // Get course reviews
-// router.get("/path/:pathId",  getPathReviews); // Get path reviews
+// // Only students allowed
+// router.post("/Review", studentProtect, createReview);
 
 // module.exports = router;
 
 
-const router = require("express").Router();
-const { createReview } = require("../controllers/reviewController");
-const { studentProtect } = require("../middleware/authMiddleware");
+const express = require("express");
+const { createReview, updateReview, deleteReview,getReviewsByCourseSlug } = require("../controllers/reviewController");
+const { studentProtect } = require("../middleware/authMiddleware"); // protect for student login
 
-// Only students allowed
-router.post("/Review", studentProtect, createReview);
+const router = express.Router();
 
+// Create Review
+router.post("/", studentProtect, createReview);
+
+// Update Review
+router.put("/:reviewId", studentProtect, updateReview);
+
+// Delete Review
+router.delete("/:reviewId", studentProtect, deleteReview);
+router.get("/course/slug/:slug", getReviewsByCourseSlug);
 module.exports = router;
-
