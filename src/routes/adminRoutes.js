@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerAdmin,updateAssignedMentorsToManager,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
+const { registerAdmin,updateAssignedMentorsToManager,deleteReviewByAdmin,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
     getUserProfile,getUserTransactions,getAllCertificates,updateReviewByAdmin,getStudentBatchesByAdmin,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
@@ -59,4 +59,5 @@ router.put("/transactions/:id/mark-paid", markTransactionAsPaid);
 router.put("/profile", adminProtect, upload.single("photo"), updateAdminProfile);
 router.get("/user/:userId/transactions", getUserTransactions);
 router.put("/admin/:reviewId", adminProtect, updateReviewByAdmin);
+router.delete("/admin/:reviewId", adminProtect, deleteReviewByAdmin);
 module.exports = router;

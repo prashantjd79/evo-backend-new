@@ -1093,8 +1093,26 @@ const updateReviewByAdmin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const deleteReviewByAdmin = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
 
-module.exports = { registerAdmin,updateReviewByAdmin,getStudentBatchesByAdmin,updateAssignedMentorsToManager,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review not found." });
+    }
+
+    await review.deleteOne();
+
+    res.json({ message: "Review deleted successfully by Admin." });
+
+  } catch (error) {
+    console.error("❌ Admin delete review failed:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { registerAdmin,deleteReviewByAdmin,updateReviewByAdmin,getStudentBatchesByAdmin,updateAssignedMentorsToManager,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,createTransaction,
    getAllTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getUserTransactions,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};
