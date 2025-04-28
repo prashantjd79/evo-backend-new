@@ -5,6 +5,7 @@ const slugify = require("slugify");
 
 
 
+
 // const createBatch = async (req, res) => {
 //   const { name, courseId, description, time, batchWeekType, startDate, endDate } = req.body;
 
@@ -144,25 +145,58 @@ const assignMentorToBatch = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const getBatchBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
+
     const batch = await Batch.findOne({ slug })
-      .select("name slug description time batchWeekType startDate endDate course mentor students")
-      .populate("course", "title slug")
-      .populate("mentor", "name email")
-      .populate("students", "name email");
+      .select("name slug description time batchWeekType startDate endDate course mentor students scheduledSessions")
+      .populate({
+        path: "course",
+        select: "title slug photo"
+      })
+      .populate({
+        path: "students",
+        select: "name email photo role"
+      });
 
     if (!batch) {
       return res.status(404).json({ message: "Batch not found" });
     }
 
-    res.json(batch);
+    // 🔥 Now manually fetch the mentor (since ref is wrong inside schema)
+    let mentor = null;
+    if (batch.mentor) {
+      mentor = await User.findById(batch.mentor).select("name email photo role");
+    }
+
+    // 🔥 Also manually populate createdBy in scheduledSessions
+    const populatedSessions = await Promise.all(
+      batch.scheduledSessions.map(async (session) => {
+        if (session.createdBy) {
+          const createdByUser = await User.findById(session.createdBy).select("name email photo role");
+          return {
+            ...session._doc,
+            createdBy: createdByUser
+          };
+        }
+        return session;
+      })
+    );
+
+    res.status(200).json({
+      ...batch._doc,
+      mentor,
+      scheduledSessions: populatedSessions
+    });
 
   } catch (error) {
+    console.error("❌ Error fetching Batch by slug:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Get all Batches of a Course
 const getBatchesByCourse = async (req, res) => {
