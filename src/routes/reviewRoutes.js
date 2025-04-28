@@ -18,7 +18,7 @@ const { studentProtect } = require("../middleware/authMiddleware"); // protect f
 const router = express.Router();
 
 // Create Review
-router.post("/", studentProtect, createReview);
+router.post("/Create", studentProtect, createReview);
 
 // Update Review
 router.put("/:reviewId", studentProtect, updateReview);

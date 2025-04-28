@@ -69,38 +69,45 @@ const mongoose = require("mongoose");
 const slugify = require("slugify");
 // ✅ Create Review (your existing)
 const createReview = async (req, res) => {
-  const { courseId, rating, comment, name } = req.body;
-  const userId = req.user._id;
-
-  if (!courseId || !rating) {
-    return res.status(400).json({ message: "Course ID and rating are required." });
-  }
-
   try {
-    const objectId = new mongoose.Types.ObjectId(courseId);
+    const { courseId, rating, comment, name } = req.body;
+    const userId = req.user._id;
 
+    if (!courseId || !rating) {
+      return res.status(400).json({ message: "Course ID and rating are required." });
+    }
+
+    // 🧠 Validate course
+    const objectId = new mongoose.Types.ObjectId(courseId);
     const courseExists = await Course.findById(objectId);
+
     if (!courseExists) {
       return res.status(404).json({ message: "Course not found." });
     }
 
+    // 🧠 Validate student's enrollment
     const student = await User.findById(userId);
     const enrolled = student.enrolledCourses.some(
       (enrollment) => enrollment.course.toString() === courseId
     );
 
     if (!enrolled) {
-      return res.status(403).json({
-        message: "You can't review because you're not enrolled in this course.",
-      });
+      return res.status(403).json({ message: "You can't review because you're not enrolled in this course." });
     }
 
+    // 🧠 Generate Slug
+    let generatedSlug = slugify(name || student.name, { lower: true, strict: true });
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    generatedSlug = `${generatedSlug}-${randomSuffix}`;
+
+    // ✅ Create Review
     const newReview = await Review.create({
       course: objectId,
       user: userId,
       name: name || student.name,
       rating,
       comment,
+      slug: generatedSlug
     });
 
     res.status(201).json({
