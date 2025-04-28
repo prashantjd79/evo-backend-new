@@ -1,6 +1,6 @@
 const express = require("express");
 const { registerAdmin,updateAssignedMentorsToManager,toggleUserBanStatus,updateAdminProfile,markTransactionAsPaid,createTransaction,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deletePromoCode,deleteTicket,deleteAnnouncement,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,loginAdmin,getAllCategories,getAllSubcategories,getAllWannaBeInterests,getMyAdminProfile,getAllCourses,getAllCourseCreators,approveUser,getPendingApprovals,approveMentor,getPendingMentors,
-    getUserProfile,getUserTransactions,getAllCertificates,getStudentBatchesByAdmin,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
+    getUserProfile,getUserTransactions,getAllCertificates,updateReviewByAdmin,getStudentBatchesByAdmin,getAllJobs,getCoursesWithDetails,getUsersByRole,getBatchesByCourseId,getAllBatches,getStudentsByCourseId ,getPlatformAnalytics,getAllSubmittedAssignments, updateUserStatus,getAllTransactions,assignMentorsToManager, exportTransactionsCSV,getAllBlogs,approveOrRejectBlog,
     
 } = require("../controllers/adminController");
 const { adminProtect } = require("../middleware/authMiddleware");
@@ -58,5 +58,5 @@ router.post("/transactions", createTransaction);
 router.put("/transactions/:id/mark-paid", markTransactionAsPaid);
 router.put("/profile", adminProtect, upload.single("photo"), updateAdminProfile);
 router.get("/user/:userId/transactions", getUserTransactions);
-
+router.put("/admin/:reviewId", adminProtect, updateReviewByAdmin);
 module.exports = router;

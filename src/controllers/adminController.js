@@ -1054,9 +1054,47 @@ const getStudentBatchesByAdmin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const updateReviewByAdmin = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { rating, comment, name, courseId } = req.body;
 
+    const review = await Review.findById(reviewId);
 
-module.exports = { registerAdmin,getStudentBatchesByAdmin,updateAssignedMentorsToManager,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
+    if (!review) {
+      return res.status(404).json({ message: "Review not found." });
+    }
+
+    // Optional: Validate course if admin wants to update courseId also
+    if (courseId) {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found." });
+      }
+      review.course = courseId;
+    }
+
+    if (rating) review.rating = rating;
+    if (comment) review.comment = comment;
+    if (name) {
+      review.name = name;
+      // 🔥 update slug if name changes
+      let newSlug = slugify(name, { lower: true, strict: true });
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      review.slug = `${newSlug}-${randomSuffix}`;
+    }
+
+    await review.save();
+
+    res.json({ message: "Review updated successfully by Admin", review });
+
+  } catch (error) {
+    console.error("❌ Admin Update Review Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerAdmin,updateReviewByAdmin,getStudentBatchesByAdmin,updateAssignedMentorsToManager,updateAdminProfile,markTransactionAsPaid,toggleUserBanStatus,getUserProfileById,getAllReviews,getBatchStudents,getAssignmentByLessonId,deleteBatch,deleteCourse,deleteAnnouncement,deleteTicket,deletePromoCode,getAllStudentsProgress,addReviewByAdmin,getAdminProfile,getAllWannaBeInterests,getAllCourseCreators,getAllCourses,getAllSubcategories,getAllCategories,getMyAdminProfile,getCoursesWithDetails,loginAdmin,approveUser,
    getPendingApprovals,approveMentor,getPendingMentors,getPendingApprovals ,getAllBatches,getUserProfile, approveOrRejectBlog,
    getUsersByRole, getPlatformAnalytics, updateUserStatus,createTransaction,
    getAllTransactions, exportTransactionsCSV ,getAllJobs,getStudentsByCourseId,getUserTransactions,getAllBlogs,assignMentorsToManager,getAllSubmittedAssignments,getAllCertificates,getBatchesByCourseId};
