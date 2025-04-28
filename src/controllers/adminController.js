@@ -21,7 +21,7 @@ const Lesson = require("../models/Lesson");
 const PromoCode = require("../models/PromoCode");
 const Ticket=require("../models/Ticket");
 const Announcement=require("../models/Announcement");
-
+const slugify = require("slugify");
 const deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
@@ -665,26 +665,64 @@ const getAdminProfile = async (req, res) => {
   }
 };
 
+// const addReviewByAdmin = async (req, res) => {
+//   try {
+//     const { courseId, rating, comment, name } = req.body; // ⬅️ added `name`
+//     const adminId = req.admin.id;
+
+//     if (!adminId) {
+//       return res.status(401).json({ message: "Unauthorized. Admin not found." });
+//     }
+
+//     const review = await Review.create({
+//       course: courseId,
+//       user: adminId,
+//       name, // ⬅️ store passed name
+//       rating,
+//       comment,
+//     });
+
+//     res.status(201).json({ message: "Review submitted successfully", review });
+//   } catch (error) {
+//     console.error("Error creating review by admin:", error);
+//     res.status(500).json({ message: "Failed to submit review" });
+//   }
+// };
+
+
 const addReviewByAdmin = async (req, res) => {
   try {
-    const { courseId, rating, comment, name } = req.body; // ⬅️ added `name`
+    const { courseId, rating, comment, name } = req.body;
     const adminId = req.admin.id;
 
     if (!adminId) {
       return res.status(401).json({ message: "Unauthorized. Admin not found." });
     }
 
+    // 🔎 Validate course
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+
+    // 🧠 Generate slug from Admin Name + Random 4-digit Number
+    let generatedSlug = slugify(name || "admin", { lower: true, strict: true });
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    generatedSlug = `${generatedSlug}-${randomSuffix}`;
+
+    // ✅ Create Review
     const review = await Review.create({
       course: courseId,
       user: adminId,
-      name, // ⬅️ store passed name
+      name,
       rating,
       comment,
+      slug: generatedSlug
     });
 
     res.status(201).json({ message: "Review submitted successfully", review });
   } catch (error) {
-    console.error("Error creating review by admin:", error);
+    console.error("❌ Error creating review by admin:", error);
     res.status(500).json({ message: "Failed to submit review" });
   }
 };
