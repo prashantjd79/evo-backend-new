@@ -5,7 +5,7 @@ const cors=require("cors");
 const certificateRoutes = require("../routes/certificateRoutes");
 const http = require("http");
 const { Server } = require("socket.io");
-
+const tagCodeRoutes = require("../routes/tagCodeRoutes");
 
 
 dotenv.config();
@@ -90,6 +90,7 @@ app.set("io", io);
 app.use(express.json());
 app.use(cors());
 app.use("/api/admin", require("../routes/adminRoutes"));
+app.use("/api/tagcodes", tagCodeRoutes);
 app.use("/api/wanna-be-interest", require("../routes/wannaBeInterestRoutes"));
 app.use("/api/certificates", require("../routes/certificateRoutes"));
 app.use("/api/categories", require("../routes/categoryRoutes"));
