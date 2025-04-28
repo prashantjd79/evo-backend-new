@@ -114,6 +114,23 @@ const getBlogById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch blog" });
   }
 };
+const getBlogBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const blog = await Blog.findOne({ slug })
+      .select("title slug content tags image conclusion creator status createdAt updatedAt")
+      .populate("creator", "name email");
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    res.json(blog);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
-module.exports = { createBlog ,updateBlog,deleteBlog,getBlogById};
+module.exports = { createBlog ,updateBlog,deleteBlog,getBlogById,getBlogBySlug};
