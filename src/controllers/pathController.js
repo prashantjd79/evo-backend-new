@@ -281,14 +281,42 @@ const updatePath = async (req, res) => {
   }
 };
 
+// const getPathBySlug = async (req, res) => {
+//   try {
+//     const { slug } = req.params;
+
+//     const pathDoc = await Path.findOne({ slug })
+//       .select("title slug description timing price photo courses wannaBeInterest createdAt updatedAt")
+//       .populate("courses", "title slug photo")  // populate course title and slug
+//       .populate("wannaBeInterest", "title slug image"); // populate WannaBeInterest title and slug
+
+//     if (!pathDoc) {
+//       return res.status(404).json({ message: "Path not found" });
+//     }
+
+//     res.json(pathDoc);
+
+//   } catch (error) {
+//     console.error("❌ Error fetching Path by slug:", error);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
 const getPathBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
     const pathDoc = await Path.findOne({ slug })
       .select("title slug description timing price photo courses wannaBeInterest createdAt updatedAt")
-      .populate("courses", "title slug photo")  // populate course title and slug
-      .populate("wannaBeInterest", "title slug image"); // populate WannaBeInterest title and slug
+      .populate({
+        path: "courses",
+        select: "title slug photo", // 🧠 This ensures Course's title, slug, photo all come
+      })
+      .populate({
+        path: "wannaBeInterest",
+        select: "title slug image" // 🧠 This ensures WannaBeInterest's title, slug, image come
+      });
 
     if (!pathDoc) {
       return res.status(404).json({ message: "Path not found" });
@@ -301,7 +329,6 @@ const getPathBySlug = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 
