@@ -2,36 +2,6 @@ const Path = require("../models/Path");
 const Course = require("../models/Course");
 const WannaBeInterest = require("../models/WannaBeInterest");
 const slugify = require("slugify"); 
-// const createPath = async (req, res) => {
-//     const { name, description, courseIds, wannaBeInterestIds } = req.body;
-  
-//     try {
-//       // Validate courseIds
-//       const validCourses = await Course.find({ _id: { $in: courseIds } });
-//       if (validCourses.length !== courseIds.length) {
-//         return res.status(400).json({ message: "Some course IDs are invalid" });
-//       }
-  
-//       // Validate wannaBeInterestIds
-//       const validWannaBeInterests = await WannaBeInterest.find({ _id: { $in: wannaBeInterestIds } });
-//       if (validWannaBeInterests.length !== wannaBeInterestIds.length) {
-//         return res.status(400).json({ message: "Some WannaBeInterest IDs are invalid" });
-//       }
-  
-//       // Create path only if all IDs exist
-//       const path = await Path.create({
-//         name,
-//         description,
-//         courses: courseIds,
-//         wannaBeInterest: wannaBeInterestIds,
-//       });
-  
-//       res.status(201).json({ message: "Path created successfully", path });
-//     } catch (error) {
-//       res.status(500).json({ message: error.message });
-//     }
-//   };
-
 
 
 const createPath = async (req, res) => {
@@ -132,7 +102,7 @@ const getPaths = async (req, res) => {
         select: "title _id"
       })
       .populate({
-        path: "wannaBeInterest", // this is an array
+        path: "wannaBeInterest", 
         select: "title"
       });
 
@@ -173,7 +143,7 @@ const getPathById = async (req, res) => {
     const path = await Path.findById(id)
       .populate({
         path: "courses",
-        select: "title description", // Include other fields if needed
+        select: "title description", 
       })
       .populate({
         path: "wannaBeInterest",
@@ -281,26 +251,7 @@ const updatePath = async (req, res) => {
   }
 };
 
-// const getPathBySlug = async (req, res) => {
-//   try {
-//     const { slug } = req.params;
 
-//     const pathDoc = await Path.findOne({ slug })
-//       .select("title slug description timing price photo courses wannaBeInterest createdAt updatedAt")
-//       .populate("courses", "title slug photo")  // populate course title and slug
-//       .populate("wannaBeInterest", "title slug image"); // populate WannaBeInterest title and slug
-
-//     if (!pathDoc) {
-//       return res.status(404).json({ message: "Path not found" });
-//     }
-
-//     res.json(pathDoc);
-
-//   } catch (error) {
-//     console.error("❌ Error fetching Path by slug:", error);
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 
 const getPathBySlug = async (req, res) => {
@@ -311,11 +262,11 @@ const getPathBySlug = async (req, res) => {
       .select("title slug description timing price photo courses wannaBeInterest createdAt updatedAt")
       .populate({
         path: "courses",
-        select: "title slug photo", // 🧠 This ensures Course's title, slug, photo all come
+        select: "title slug photo",
       })
       .populate({
         path: "wannaBeInterest",
-        select: "title slug image" // 🧠 This ensures WannaBeInterest's title, slug, image come
+        select: "title slug image" 
       });
 
     if (!pathDoc) {

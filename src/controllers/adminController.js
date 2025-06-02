@@ -665,29 +665,7 @@ const getAdminProfile = async (req, res) => {
   }
 };
 
-// const addReviewByAdmin = async (req, res) => {
-//   try {
-//     const { courseId, rating, comment, name } = req.body; // ⬅️ added `name`
-//     const adminId = req.admin.id;
 
-//     if (!adminId) {
-//       return res.status(401).json({ message: "Unauthorized. Admin not found." });
-//     }
-
-//     const review = await Review.create({
-//       course: courseId,
-//       user: adminId,
-//       name, // ⬅️ store passed name
-//       rating,
-//       comment,
-//     });
-
-//     res.status(201).json({ message: "Review submitted successfully", review });
-//   } catch (error) {
-//     console.error("Error creating review by admin:", error);
-//     res.status(500).json({ message: "Failed to submit review" });
-//   }
-// };
 
 
 const addReviewByAdmin = async (req, res) => {
@@ -699,13 +677,13 @@ const addReviewByAdmin = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized. Admin not found." });
     }
 
-    // 🔎 Validate course
+    
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ message: "Course not found." });
     }
 
-    // 🧠 Generate slug from Admin Name + Random 4-digit Number
+    
     let generatedSlug = slugify(name || "admin", { lower: true, strict: true });
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     generatedSlug = `${generatedSlug}-${randomSuffix}`;
@@ -819,9 +797,9 @@ const getBatchStudents = async (req, res) => {
 const getAllReviews = async (req, res) => {
   try {
     const reviews = await Review.find()
-      .populate("user", "name email")        // ✅ Show reviewer info
-      .populate("course", "title")           // ✅ Show course title
-      .sort({ createdAt: -1 });              // 🔽 Newest first
+      .populate("user", "name email")        
+      .populate("course", "title")           
+      .sort({ createdAt: -1 });              
 
     res.status(200).json({ reviews });
   } catch (error) {
@@ -859,7 +837,7 @@ const getUserProfileById = async (req, res) => {
 const toggleUserBanStatus = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { banned } = req.body; // expect true or false
+    const { banned } = req.body; 
 
     const user = await User.findById(userId);
     if (!user) {
@@ -935,7 +913,7 @@ const getUserTransactions = async (req, res) => {
     }
 
     const transactions = await Transaction.find({ user: userId })
-      .populate("course", "title realPrice discountedPrice") // optional: shows course details
+      .populate("course", "title realPrice discountedPrice") 
       .sort({ createdAt: -1 }); // latest first
 
     res.status(200).json({
@@ -950,7 +928,7 @@ const getUserTransactions = async (req, res) => {
 
 
 
-// controllers/adminController.js
+
 
 
 
@@ -995,7 +973,7 @@ const updateAdminProfile = async (req, res) => {
       bio: req.body.bio,
     };
 
-    // ✅ Handle profile photo upload from form-data
+    
     if (req.file) {
       updates.photo = req.file.path;
     } else if (req.body.photo) {
@@ -1033,7 +1011,7 @@ const getStudentBatchesByAdmin = async (req, res) => {
       .populate({ path: "course", select: "title" }) // Only get course _id and title
       .select("name course"); // Only get batch name and course reference
 
-    // Transform to show only required fields
+    
     const simplifiedBatches = batches.map(batch => ({
       batchId: batch._id,
       batchName: batch.name,
